@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Risk Assessment Questionnaire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0f172a;
+            --secondary: #1e293b;
+            --accent: #8b5cf6;
+            --accent-light: #a78bfa;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.3), transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.3), transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.2), transparent 50%);
+            pointer-events: none;
+            animation: bgFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px 50px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #8b5cf6, #667eea);
+            background-size: 300% 100%;
+            animation: gradientSlide 5s linear infinite;
+        }
+
+        @keyframes gradientSlide {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
+
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 900;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .section-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .section-icon {
+            font-size: 2.5rem;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--primary);
+            font-weight: 800;
+            flex: 1;
+        }
+
+        .domain-badge {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .intro-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 5px solid #3b82f6;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 5px solid #f59e0b;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1);
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 5px solid #10b981;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);
+        }
+
+        .principle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .principle-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .principle-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .principle-card:hover {
+            transform: translateY(-5px);
+            border-color: #8b5cf6;
+            box-shadow: 0 12px 30px rgba(139, 92, 246, 0.2);
+        }
+
+        .principle-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .principle-card h4 {
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .principle-card p {
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .domain-section {
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+            border-radius: 16px;
+            padding: 35px;
+            margin: 30px 0;
+            border: 2px solid #e9d5ff;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.15);
+        }
+
+        .domain-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .domain-icon {
+            font-size: 3rem;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
+        .domain-title {
+            flex: 1;
+        }
+
+        .domain-title h3 {
+            font-size: 1.6rem;
+            color: var(--primary);
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .domain-objective {
+            color: #6b7280;
+            font-style: italic;
+            font-size: 0.95rem;
+        }
+
+        .question-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e9d5ff;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .question-card:hover {
+            border-color: #8b5cf6;
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.15);
+            transform: translateX(5px);
+        }
+
+        .question-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .options-list {
+            list-style: none;
+            margin: 15px 0;
+        }
+
+        .options-list li {
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .options-list li:hover {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-color: #3b82f6;
+            transform: translateX(5px);
+        }
+
+        .score-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: auto;
+        }
+
+        .evidence-trigger {
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #92400e;
+        }
+
+        .evidence-trigger strong {
+            color: #78350f;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 25px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            padding: 18px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px 18px;
+            border-bottom: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .risk-low {
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            color: #065f46;
+        }
+
+        .risk-medium {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #92400e;
+        }
+
+        .risk-high {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: #991b1b;
+        }
+
+        .risk-critical {
+            background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+            color: #7f1d1d;
+        }
+
+        .vendor-form {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border: 2px solid #e9d5ff;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .form-field label {
+            display: block;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .scoring-matrix {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border: 2px solid #e2e8f0;
+        }
+
+        .matrix-title {
+            font-size: 1.4rem;
+            color: var(--primary);
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        ul {
+            margin: 15px 0 15px 25px;
+        }
+
+        li {
+            margin: 10px 0;
+            color: #475569;
+            line-height: 1.7;
+        }
+
+        strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #8b5cf6;
+            font-weight: 600;
+        }
+
+        footer {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            text-align: center;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .footer-title {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 30px 25px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .section-card {
+                padding: 25px 20px;
+            }
+
+            .principle-grid,
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .domain-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-badge">🎯 GRC Assessment Tool</div>
+            <h1>Vendor Risk Assessment Questionnaire</h1>
+            <p class="subtitle">Comprehensive Third-Party Risk Evaluation Framework</p>
+        </header>
+
+        <!-- Section 1: Purpose & Positioning -->
+        <div class="section-card">
+            <div class="section-header">
+                <span class="section-icon">📋</span>
+                <h2 class="section-title">Purpose & Positioning</h2>
+                <span class="domain-badge">Read First</span>
+            </div>
+
+            <div class="intro-box">
+                <p style="color: #1e40af; font-weight: 600; margin-bottom: 15px;">The Vendor Risk Questionnaire is the primary assessment mechanism used to evaluate third-party vendors against defined security, compliance, and operational risk domains.</p>
+                
+                <p style="color: #475569; margin-bottom: 0;"><strong>This questionnaire enables:</strong></p>
+            </div>
+
+            <div class="principle-grid">
+                <div class="principle-card">
+                    <h4>✓ Consistent Risk Scoring</h4>
+                    <p>Standardized evaluation across all vendors</p>
+                </div>
+                <div class="principle-card">
+                    <h4>✓ Evidence-Based Decisions</h4>
+                    <p>Defensible, documented risk assessments</p>
+                </div>
+                <div class="principle-card">
+                    <h4>✓ Risk Register Integration</h4>
+                    <p>Direct feed into centralized risk tracking</p>
+                </div>
+                <div class="principle-card">
+                    <h4>✓ Informed Risk Decisions</h4>
+                    <p>Support for acceptance or rejection</p>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong style="color: #065f46; display: block; margin-bottom: 10px;">✨ Design Philosophy</strong>
+                <ul style="margin: 10px 0 0 20px; color: #047857;">
+                    <li><strong>Vendor-agnostic</strong> – Works across all vendor types</li>
+                    <li><strong>Scalable</strong> – Efficient for growing vendor portfolios</li>
+                    <li><strong>Standards-aligned</strong> – ISO/IEC 27001 and NIST CSF compliant</li>
+                    <li><strong>Balanced rigor</strong> – Simple for vendors, rigorous for risk teams</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Section 2: Design Principles -->
+        <div class="section-card">
+            <div class="section-header">
+                <span class="section-icon">⚙️</span>
+                <h2 class="section-title">Questionnaire Design Principles</h2>
+                <span class="domain-badge">Industry Logic</span>
+            </div>
+
+            <h3 style="color: var(--primary); font-weight: 700; margin: 25px 0 15px 0;">Fixed Design Rules</h3>
+            
+            <div class="principle-grid">
+                <div class="principle-card">
+                    <h4>6 Risk Domains</h4>
+                    <p>Same as framework structure</p>
+                </div>
+                <div class="principle-card">
+                    <h4>15–18 Questions</h4>
+                    <p>Comprehensive yet efficient</p>
+                </div>
+                <div class="principle-card">
+                    <h4>MCQ-Based Scoring</h4>
+                    <p>Standardized evaluation method</p>
+                </div>
+                <div class="principle-card">
+                    <h4>Score Range: 1–5</h4>
+                    <p>Granular maturity assessment</p>
+                </div>
+                <div class="principle-card">
+                    <h4>Evidence Required</h4>
+                    <p>For high-risk responses</p>
+                </div>
+                <div class="principle-card">
+                    <h4>Maturity-Based</h4>
+                    <p>Not all "Yes" answers equal</p>
+                </div>
+            </div>
+
+            <div class="scoring-matrix">
+                <h4 class="matrix-title">📊 Scoring Interpretation</h4>
+                <table>
+                    <tr>
+                        <th>Score</th>
+                        <th>Meaning</th>
+                        <th>Control Status</th>
+                    </tr>
+                    <tr>
+                        <td><strong>5</strong></td>
+                        <td>Fully implemented and documented</td>
+                        <td><span class="risk-badge risk-low">Excellent</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>4</strong></td>
+                        <td>Implemented with minor gaps</td>
+                        <td><span class="risk-badge risk-low">Good</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>3</strong></td>
+                        <td>Partially implemented</td>
+                        <td><span class="risk-badge risk-medium">Moderate</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>2</strong></td>
+                        <td>Informal / ad-hoc</td>
+                        <td><span class="risk-badge risk-high">Weak</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>1</strong></td>
+                        <td>Not implemented</td>
+                        <td><span class="risk-badge risk-critical">Critical</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 3: Vendor Information -->
+        <div class="section-card">
+            <div class="section-header">
+                <span class="section-icon">🏢</span>
+                <h2 class="section-title">Vendor Information Section</h2>
+                <span class="domain-badge">Mandatory</span>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Important Note:</strong> This section is non-scored but required for governance and risk context.
+            </div>
+
+            <div class="vendor-form">
+                <h3 style="color: var(--primary); font-weight: 700; margin-bottom: 20px;">Vendor Details</h3>
+                
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>Vendor Legal Name *</label>
+                        <input type="text" placeholder="Enter legal vendor name">
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Service Description *</label>
+                        <input type="text" placeholder="Brief description of service">
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Data Accessed *</label>
+                        <select>
+                            <option>Select data classification</option>
+                            <option>None</option>
+                            <option>Internal</option>
+                            <option>Confidential</option>
+                            <option>Regulated</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Hosting Model *</label>
+                        <select>
+                            <option>Select hosting model</option>
+                            <option>Cloud</option>
+                            <option>On-Premises</option>
+                            <option>Hybrid</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Geographic Data Processing Locations *</label>
+                        <input type="text" placeholder="e.g., US, EU, APAC">
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Subcontractors / Fourth Parties *</label>
+                        <select>
+                            <option>Select option</option>
+                            <option>Yes</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOMAIN 1: Data Protection -->
+        <div class="section-card">
+            <div class="section-header">
+                <span class="section-icon">🔐</span>
+                <h2 class="section-title">Risk Domains & Questions</h2>
+                <span class="domain-badge">Core Content</span>
+            </div>
+
+            <div class="domain-section">
+                <div class="domain-header">
+                    <span class="domain-icon">🔐</span>
+                    <div class="domain-title">
+                        <h3>DOMAIN 1: Data Protection</h3>
+                        <p class="domain-objective">Objective: Assess how the vendor protects organizational data</p>
+                    </div>
+                    <span class="domain-badge">3 Questions</span>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q1.1</span>
+                    <p class="question-text">Is sensitive data encrypted at rest using industry-accepted encryption standards?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Informal controls</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No encryption</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q1.3</span>
+                    <p class="question-text">Does the vendor have formal data retention and secure data disposal procedures?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Fully implemented</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Implemented with limitations</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Partial procedures</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Informal controls</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No formal procedures</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="evidence-trigger">
+                    <strong>📌 Evidence Trigger:</strong>
+                    Encryption policy, key management documentation, data handling procedures
+                </div>
+            </div>
+
+            <!-- DOMAIN 2: Identity & Access Management -->
+            <div class="domain-section">
+                <div class="domain-header">
+                    <span class="domain-icon">🔑</span>
+                    <div class="domain-title">
+                        <h3>DOMAIN 2: Identity & Access Management</h3>
+                        <p class="domain-objective">Objective: Evaluate control over user and privileged access</p>
+                    </div>
+                    <span class="domain-badge">3 Questions</span>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q2.1</span>
+                    <p class="question-text">Is access to systems restricted using role-based access controls (RBAC)?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Fully implemented and enforced</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Implemented with minor gaps</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Partially implemented</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Informal / ad-hoc controls</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No RBAC implementation</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q2.2</span>
+                    <p class="question-text">Is multi-factor authentication (MFA) enforced for privileged and remote access?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – MFA enforced for all privileged access</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ MFA enforced with limited exceptions</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ MFA available but not enforced</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ MFA planned but not implemented</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No MFA implementation</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q2.3</span>
+                    <p class="question-text">Are access rights reviewed periodically and revoked upon role change or termination?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Regular reviews with documented process</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Reviews conducted with minor gaps</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Informal review process</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Ad-hoc reviews only</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No formal review process</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="evidence-trigger">
+                    <strong>📌 Evidence Trigger:</strong>
+                    IAM policy, access review records, MFA configuration screenshots
+                </div>
+            </div>
+
+            <!-- DOMAIN 3: Compliance & Privacy -->
+            <div class="domain-section">
+                <div class="domain-header">
+                    <span class="domain-icon">📜</span>
+                    <div class="domain-title">
+                        <h3>DOMAIN 3: Compliance & Privacy</h3>
+                        <p class="domain-objective">Objective: Assess regulatory and legal risk exposure</p>
+                    </div>
+                    <span class="domain-badge">3 Questions</span>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q3.1</span>
+                    <p class="question-text">Does the vendor comply with applicable data protection and privacy regulations?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Full compliance with evidence</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Compliant with minor documentation gaps</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Partial compliance</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Compliance in progress</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No compliance framework</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q3.2</span>
+                    <p class="question-text">Does the vendor maintain independent security or compliance certifications (e.g., ISO 27001, SOC 2)?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Current certifications available</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Certifications with limited scope</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Certification in progress</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Planned but not initiated</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No certifications</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q3.3</span>
+                    <p class="question-text">Are privacy and security responsibilities contractually defined?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Comprehensive contract clauses</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Defined with minor gaps</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Basic clauses only</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Minimal contractual coverage</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No formal contract clauses</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="evidence-trigger">
+                    <strong>📌 Evidence Trigger:</strong>
+                    Certifications, audit reports, contract clauses
+                </div>
+            </div>
+
+            <!-- DOMAIN 4: Business Continuity -->
+            <div class="domain-section">
+                <div class="domain-header">
+                    <span class="domain-icon">🔄</span>
+                    <div class="domain-title">
+                        <h3>DOMAIN 4: Business Continuity</h3>
+                        <p class="domain-objective">Objective: Evaluate service availability and resilience</p>
+                    </div>
+                    <span class="domain-badge">3 Questions</span>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q4.1</span>
+                    <p class="question-text">Does the vendor maintain a documented Business Continuity Plan (BCP)?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Comprehensive and tested BCP</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ BCP documented with minor gaps</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Basic BCP exists</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Informal continuity planning</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No BCP</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q4.2</span>
+                    <p class="question-text">Are backup processes defined, tested, and monitored?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Regular backups with verified restoration</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Backups tested with minor gaps</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Backups defined but not regularly tested</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Ad-hoc backup process</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No formal backup process</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q4.3</span>
+                    <p class="question-text">Has the vendor conducted disaster recovery testing within the last 12 months?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Full DR test with documented results</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ DR tested with limited scope</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Tabletop exercise only</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ DR test older than 12 months</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No DR testing</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="evidence-trigger">
+                    <strong>📌 Evidence Trigger:</strong>
+                    BCP/DR plans, test results, recovery metrics
+                </div>
+            </div>
+
+            <!-- DOMAIN 5: Incident Response -->
+            <div class="domain-section">
+                <div class="domain-header">
+                    <span class="domain-icon">🚨</span>
+                    <div class="domain-title">
+                        <h3>DOMAIN 5: Incident Response</h3>
+                        <p class="domain-objective">Objective: Assess preparedness to detect and respond to incidents</p>
+                    </div>
+                    <span class="domain-badge">3 Questions</span>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q5.1</span>
+                    <p class="question-text">Does the vendor maintain a formal incident response plan?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Comprehensive IR plan with defined roles</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ IR plan with minor gaps</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Basic IR procedures exist</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Informal response process</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No IR plan</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q5.2</span>
+                    <p class="question-text">Are security incidents reported to customers within defined timeframes?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – SLA-based notification with evidence</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Notification process with minor delays</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Informal notification process</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ No defined timeframes</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No customer notification process</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q5.3</span>
+                    <p class="question-text">Does the vendor perform root cause analysis and corrective actions after incidents?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Documented RCA with lessons learned</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ RCA conducted with limited documentation</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Basic post-incident review</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Informal analysis only</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No RCA process</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="evidence-trigger">
+                    <strong>📌 Evidence Trigger:</strong>
+                    IR plan, incident SLAs, post-incident reports
+                </div>
+            </div>
+
+            <!-- DOMAIN 6: Vendor Governance -->
+            <div class="domain-section">
+                <div class="domain-header">
+                    <span class="domain-icon">🏛️</span>
+                    <div class="domain-title">
+                        <h3>DOMAIN 6: Vendor Governance</h3>
+                        <p class="domain-objective">Objective: Assess governance maturity and accountability</p>
+                    </div>
+                    <span class="domain-badge">3 Questions</span>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q6.1</span>
+                    <p class="question-text">Is there a designated security or risk contact responsible for customer assurance?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Dedicated team with clear escalation path</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Designated contact with shared responsibilities</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Contact identified but not dedicated</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Informal contact arrangement</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No designated contact</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q6.2</span>
+                    <p class="question-text">Does the vendor conduct internal risk assessments or audits?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Regular assessments with documented findings</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Assessments conducted with minor gaps</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Periodic assessments without formal schedule</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Ad-hoc assessments only</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No internal assessments</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="question-card">
+                    <span class="question-number">Q6.3</span>
+                    <p class="question-text">Does the vendor manage and monitor subcontractors (fourth-party risk)?</p>
+                    
+                    <ul class="options-list">
+                        <li>
+                            <span>☐ Yes – Formal fourth-party risk program</span>
+                            <span class="score-badge">5</span>
+                        </li>
+                        <li>
+                            <span>☐ Subcontractor management with minor gaps</span>
+                            <span class="score-badge">4</span>
+                        </li>
+                        <li>
+                            <span>☐ Basic subcontractor oversight</span>
+                            <span class="score-badge">3</span>
+                        </li>
+                        <li>
+                            <span>☐ Limited subcontractor visibility</span>
+                            <span class="score-badge">2</span>
+                        </li>
+                        <li>
+                            <span>☐ No subcontractor management</span>
+                            <span class="score-badge">1</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="evidence-trigger">
+                    <strong>📌 Evidence Trigger:</strong>
+                    Governance structure, audit schedules, third-party policies
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Scoring & Aggregation -->
+        <div class="section-card">
+            <div class="section-header">
+                <span class="section-icon">📊</span>
+                <h2 class="section-title">Scoring & Aggregation Logic</h2>
+                <span class="domain-badge">Critical</span>
+            </div>
+
+            <div class="success-box">
+                <h3 style="color: #065f46; margin-bottom: 15px;">Domain Scoring</h3>
+                <ul style="margin: 10px 0 0 20px; color: #047857;">
+                    <li>Average score calculated per domain</li>
+                    <li>Low-scoring domains automatically flagged for review</li>
+                    <li>Domain scores feed into overall vendor risk rating</li>
+                </ul>
+            </div>
+
+            <div class="scoring-matrix">
+                <h4 class="matrix-title">Overall Vendor Risk Score Calculation</h4>
+                <p style="text-align: center; color: #475569; margin: 20px 0;">
+                    <code style="font-size: 1.1rem; padding: 8px 16px;">Overall Score = Average of all domain scores</code>
+                </p>
+
+                <h4 style="color: var(--primary); font-weight: 700; margin: 30px 0 15px 0; text-align: center;">Risk Level Mapping</h4>
+                <table>
+                    <tr>
+                        <th>Score Range</th>
+                        <th>Risk Level</th>
+                        <th>Required Action</th>
+                    </tr>
+                    <tr>
+                        <td><strong>4.0 – 5.0</strong></td>
+                        <td><span class="risk-badge risk-low">Low</span></td>
+                        <td>Standard approval process</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3.0 – 3.9</strong></td>
+                        <td><span class="risk-badge risk-medium">Medium</span></td>
+                        <td>Enhanced controls required</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2.0 – 2.9</strong></td>
+                        <td><span class="risk-badge risk-high">High</span></td>
+                        <td>Risk Committee review</td>
+                    </tr>
+                    <tr>
+                        <td><strong>&lt; 2.0</strong></td>
+                        <td><span class="risk-badge risk-critical">Critical</span></td>
+                        <td>Immediate escalation / Reject</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 6: Governance Integration -->
+        <div class="section-card">
+            <div class="section-header">
+                <span class="section-icon">🎯</span>
+                <h2 class="section-title">Governance Integration</h2>
+                <span class="domain-badge">Framework Link</span>
+            </div>
+
+            <div class="intro-box">
+                <p style="color: #1e40af; font-weight: 600; margin-bottom: 15px;">The questionnaire output is used to:</p>
+            </div>
+
+            <div class="principle-grid">
+                <div class="principle-card">
+                    <h4>📋 Populate Inherent Risk</h4>
+                    <p>Feed initial risk ratings into framework</p>
+                </div>
+                <div class="principle-card">
+                    <h4>🔍 Identify Control Gaps</h4>
+                    <p>Highlight areas requiring mitigation</p>
+                </div>
+                <div class="principle-card">
+                    <h4>⚡ Trigger Risk Treatment</h4>
+                    <p>Initiate appropriate response actions</p>
+                </div>
+                <div class="principle-card">
+                    <h4>✅ Support Risk Decisions</h4>
+                    <p>Enable acceptance or rejection</p>
+                </div>
+                <div class="principle-card">
+                    <h4>📅 Define Monitoring</h4>
+                    <p>Set review frequency based on risk</p>
+                </div>
+                <div class="principle-card">
+                    <h4>📊 Update Risk Register</h4>
+                    <p>Maintain centralized risk tracking</p>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ High-Risk / Critical Outcomes Require:</strong>
+                <ul style="margin: 15px 0 0 20px; color: #92400e;">
+                    <li><strong>Senior management review</strong> – Executive oversight mandatory</li>
+                    <li><strong>Risk acceptance memo or mitigation plan</strong> – Documented decision required</li>
+                    <li><strong>Contractual conditions or vendor rejection</strong> – Formal action taken</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Section 7: Review & Refresh -->
+        <div class="section-card">
+            <div class="section-header">
+                <span class="section-icon">🔄</span>
+                <h2 class="section-title">Review & Refresh Cycle</h2>
+                <span class="domain-badge">Continuous Improvement</span>
+            </div>
+
+            <div class="success-box">
+                <h3 style="color: #065f46; margin-bottom: 15px;">Questionnaire Review Cadence</h3>
+                <p style="color: #047857; margin-bottom: 15px;"><strong>Annual Review:</strong> The questionnaire is reviewed and updated at least once per year to ensure continued relevance and effectiveness.</p>
+            </div>
+
+            <h3 style="color: var(--primary); font-weight: 700; margin: 25px 0 15px 0;">Updates Based On:</h3>
+
+            <div class="principle-grid">
+                <div class="principle-card">
+                    <h4>⚖️ Regulatory Changes</h4>
+                    <p>New compliance requirements and legal obligations</p>
+                </div>
+                <div class="principle-card">
+                    <h4>🚨 Incident Trends</h4>
+                    <p>Emerging threats and attack patterns</p>
+                </div>
+                <div class="principle-card">
+                    <h4>📊 Risk Appetite Changes</h4>
+                    <p>Organizational tolerance adjustments</p>
+                </div>
+                <div class="principle-card">
+                    <h4>🔍 Lessons Learned</h4>
+                    <p>Vendor assessment feedback and improvements</p>
+                </div>
+            </div>
+
+            <div class="intro-box" style="margin-top: 25px;">
+                <p style="color: #1e40af; font-weight: 600; text-align: center;">
+                    Continuous improvement ensures the questionnaire remains aligned with business objectives, industry best practices, and evolving risk landscape.
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            <p class="footer-title">Vendor Risk Assessment Questionnaire</p>
+            <p style="color: #64748b; font-size: 0.95rem; margin: 10px 0;">Enterprise Third-Party Risk Evaluation Framework</p>
+            <p style="color: #94a3b8; font-size: 0.85rem;">© 2026 | Governance, Risk & Compliance | Industry-Grade Assessment Tool</p>
+        </footer>
+    </div>
+</body>
+</html>            

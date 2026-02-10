@@ -1,0 +1,2504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VendorRisk Pro - Third-Party Vendor Risk Assessment</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-link.active { background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, transparent 100%); border-left: 3px solid #3b82f6; }
+        .risk-critical { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); }
+        .risk-high { background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); }
+        .risk-medium { background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); }
+        .risk-low { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .progress-step.completed .step-circle { background: #22c55e; border-color: #22c55e; }
+        .progress-step.active .step-circle { background: #3b82f6; border-color: #3b82f6; }
+        .tooltip { position: relative; }
+        .tooltip:hover::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1f2937; color: white; padding: 0.5rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; white-space: nowrap; z-index: 50; }
+        .maturity-bar { height: 8px; border-radius: 4px; background: #e5e7eb; overflow: hidden; }
+        .maturity-fill { height: 100%; transition: width 0.5s ease; }
+        input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .btn-primary:hover { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+        .answer-option { transition: all 0.2s ease; }
+        .answer-option.selected-yes { border-color: #22c55e !important; background-color: #f0fdf4 !important; }
+        .answer-option.selected-partial { border-color: #eab308 !important; background-color: #fefce8 !important; }
+        .answer-option.selected-no { border-color: #dc2626 !important; background-color: #fef2f2 !important; }
+        .answer-option:hover { border-color: #9ca3af; }
+        @media print { .no-print { display: none !important; } }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app"></div>
+
+    <script>
+    // ==================== DATA MODELS & SEED DATA ====================
+    const RISK_CATEGORIES = ['Data Protection', 'Identity & Access Management', 'Compliance & Privacy', 'Business Continuity', 'Incident Response', 'Vendor Governance'];
+    
+    const VENDOR_TYPES = ['Cloud Service Provider', 'Payment Gateway', 'Email/Collab Service'];
+    
+    const ROLES = { ADMIN: 'Admin', SECURITY_MANAGER: 'SecurityManager', RISK_REVIEWER: 'RiskReviewer', VIEWER: 'Viewer' };
+    
+    const MATURITY_LEVELS = [
+        { name: 'Ad-hoc', min: 0, max: 1.99, color: '#dc2626' },
+        { name: 'Initial', min: 2.0, max: 2.99, color: '#ea580c' },
+        { name: 'Defined', min: 3.0, max: 3.49, color: '#eab308' },
+        { name: 'Managed', min: 3.5, max: 4.2, color: '#22c55e' },
+        { name: 'Optimized', min: 4.21, max: 5.0, color: '#059669' }
+    ];
+
+    const QUESTIONS = [
+        { id: 1, text: 'Is customer data encrypted at rest and in transit?', category: 'Data Protection', weight: 1, iso_controls: ['A.10.1.1', 'A.10.1.2'], nist_functions: ['PR.DS-1', 'PR.DS-2'] },
+        { id: 2, text: 'Is strong key management in place and documented?', category: 'Data Protection', weight: 1, iso_controls: ['A.10.1.2'], nist_functions: ['PR.DS-1'] },
+        { id: 3, text: 'Are multi-factor authentication (MFA) controls enforced for admin accounts?', category: 'Identity & Access Management', weight: 1, iso_controls: ['A.9.4.2'], nist_functions: ['PR.AC-1', 'PR.AC-7'] },
+        { id: 4, text: 'Are least-privilege and role-based access controls used?', category: 'Identity & Access Management', weight: 1, iso_controls: ['A.9.2.3', 'A.9.4.1'], nist_functions: ['PR.AC-4'] },
+        { id: 5, text: 'Does the vendor have documented data processing agreements and privacy policy aligned with GDPR/PDPA?', category: 'Compliance & Privacy', weight: 1, iso_controls: ['A.18.1.4'], nist_functions: ['ID.GV-3'] },
+        { id: 6, text: 'Does the vendor undergo regular compliance audits (SOC2/ISO27001/PCI-DSS) and provide reports?', category: 'Compliance & Privacy', weight: 1, iso_controls: ['A.18.2.1'], nist_functions: ['ID.GV-4'] },
+        { id: 7, text: 'Does the vendor maintain a tested disaster recovery plan with RTO/RPO defined?', category: 'Business Continuity', weight: 1, iso_controls: ['A.17.1.1', 'A.17.1.2'], nist_functions: ['RC.RP-1'] },
+        { id: 8, text: 'Is there geographic redundancy for critical systems?', category: 'Business Continuity', weight: 1, iso_controls: ['A.17.2.1'], nist_functions: ['PR.IP-9'] },
+        { id: 9, text: 'Does the vendor have a documented incident response plan and playbooks?', category: 'Incident Response', weight: 1, iso_controls: ['A.16.1.1', 'A.16.1.5'], nist_functions: ['RS.RP-1'] },
+        { id: 10, text: 'Does the vendor provide timely breach notifications and an SLA for incident communication?', category: 'Incident Response', weight: 1, iso_controls: ['A.16.1.2'], nist_functions: ['RS.CO-2', 'RS.CO-3'] },
+        { id: 11, text: 'Does the vendor perform background checks and security training for staff handling customer data?', category: 'Vendor Governance', weight: 1, iso_controls: ['A.7.1.1', 'A.7.2.2'], nist_functions: ['PR.AT-1'] },
+        { id: 12, text: 'Does the vendor use sub-processors and are sub-processor lists and controls available?', category: 'Vendor Governance', weight: 1, iso_controls: ['A.15.1.2'], nist_functions: ['ID.SC-1'] },
+        { id: 13, text: 'Are secure data deletion and retention policies enforced?', category: 'Data Protection', weight: 1, iso_controls: ['A.8.3.2'], nist_functions: ['PR.IP-6'] },
+        { id: 14, text: 'Are privileged access sessions logged and reviewed?', category: 'Identity & Access Management', weight: 1, iso_controls: ['A.9.2.5', 'A.12.4.1'], nist_functions: ['PR.AC-6', 'DE.CM-3'] },
+        { id: 15, text: 'Does the vendor provide data localization options where required?', category: 'Compliance & Privacy', weight: 1, iso_controls: ['A.18.1.1'], nist_functions: ['ID.GV-3'] },
+        { id: 16, text: 'Are post-incident root-cause analyses produced and shared with customers?', category: 'Incident Response', weight: 1, iso_controls: ['A.16.1.6'], nist_functions: ['RS.AN-2'] },
+        { id: 17, text: 'Is there a formal SLA that includes security obligations and penalties?', category: 'Vendor Governance', weight: 1, iso_controls: ['A.15.2.1'], nist_functions: ['ID.SC-2'] },
+        { id: 18, text: 'Are backup processes tested and verified regularly?', category: 'Business Continuity', weight: 1, iso_controls: ['A.12.3.1'], nist_functions: ['PR.IP-4'] }
+    ];
+
+    const DEFAULT_IMPACTS = {
+        'Data Protection': 5,
+        'Identity & Access Management': 4,
+        'Compliance & Privacy': 4,
+        'Business Continuity': 5,
+        'Incident Response': 4,
+        'Vendor Governance': 3
+    };
+
+    // ==================== STATE MANAGEMENT ====================
+    const createStore = (initialState) => {
+        let state = initialState;
+        const listeners = [];
+        return {
+            getState: () => state,
+            setState: (newState) => { state = { ...state, ...newState }; listeners.forEach(l => l(state)); },
+            subscribe: (listener) => { listeners.push(listener); return () => listeners.splice(listeners.indexOf(listener), 1); }
+        };
+    };
+
+    const loadFromStorage = (key, defaultValue) => {
+        try { return JSON.parse(localStorage.getItem(key)) || defaultValue; }
+        catch { return defaultValue; }
+    };
+
+    const saveToStorage = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+
+    // Initialize data
+    const initializeData = () => {
+        if (!loadFromStorage('initialized', false)) {
+            saveToStorage('users', [
+                { id: 1, email: 'admin@fintech.com', password: 'admin123', fullName: 'System Administrator', role: 'Admin', createdAt: new Date().toISOString() },
+                { id: 2, email: 'security@fintech.com', password: 'security123', fullName: 'Sarah Chen', role: 'SecurityManager', createdAt: new Date().toISOString() },
+                { id: 3, email: 'reviewer@fintech.com', password: 'reviewer123', fullName: 'Michael Ross', role: 'RiskReviewer', createdAt: new Date().toISOString() },
+                { id: 4, email: 'viewer@fintech.com', password: 'viewer123', fullName: 'Emily Watson', role: 'Viewer', createdAt: new Date().toISOString() }
+            ]);
+            saveToStorage('vendors', [
+                { id: 1, name: 'AWS Cloud Services', type: 'Cloud Service Provider', description: 'Primary cloud infrastructure provider', contactEmail: 'enterprise@aws.com', createdAt: new Date().toISOString() },
+                { id: 2, name: 'Stripe Payments', type: 'Payment Gateway', description: 'Payment processing gateway for transactions', contactEmail: 'security@stripe.com', createdAt: new Date().toISOString() },
+                { id: 3, name: 'Microsoft 365', type: 'Email/Collab Service', description: 'Email and collaboration suite', contactEmail: 'enterprise@microsoft.com', createdAt: new Date().toISOString() }
+            ]);
+            saveToStorage('questions', QUESTIONS);
+            saveToStorage('questionnaires', [{ id: 1, name: 'Standard Vendor Security Assessment', description: 'Comprehensive 18-question security assessment covering all risk categories', createdAt: new Date().toISOString(), questionIds: QUESTIONS.map(q => q.id) }]);
+            saveToStorage('assessments', []);
+            saveToStorage('risks', []);
+            saveToStorage('auditLogs', []);
+            saveToStorage('initialized', true);
+        }
+    };
+
+    initializeData();
+
+    const store = createStore({
+        currentUser: loadFromStorage('currentUser', null),
+        currentPage: 'login',
+        sidebarOpen: true,
+        assessmentWizard: null
+    });
+
+    // ==================== UTILITY FUNCTIONS ====================
+    const generateId = () => Date.now() + Math.random().toString(36).substr(2, 9);
+    
+    const formatDate = (date) => new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    
+    const formatDateTime = (date) => new Date(date).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    const logAudit = (action, details) => {
+        const logs = loadFromStorage('auditLogs', []);
+        logs.unshift({
+            id: generateId(),
+            userId: store.getState().currentUser?.id,
+            userName: store.getState().currentUser?.fullName,
+            action,
+            details,
+            createdAt: new Date().toISOString()
+        });
+        saveToStorage('auditLogs', logs.slice(0, 1000));
+    };
+
+    const hasPermission = (requiredRoles) => {
+        const user = store.getState().currentUser;
+        if (!user) return false;
+        if (typeof requiredRoles === 'string') return user.role === requiredRoles;
+        return requiredRoles.includes(user.role);
+    };
+
+    // ==================== RISK CALCULATION ENGINE ====================
+    const calculateRiskScores = (answers, impactOverrides = {}) => {
+        const questions = loadFromStorage('questions', []);
+        const categoryScores = {};
+        const categoryDetails = {};
+
+        // Group answers by category
+        RISK_CATEGORIES.forEach(cat => {
+            const catQuestions = questions.filter(q => q.category === cat);
+            const catAnswers = catQuestions.map(q => {
+                const ans = answers.find(a => a.questionId === q.id);
+                return { question: q, score: ans?.score || 1 };
+            });
+            
+            const scores = catAnswers.map(a => a.score);
+            const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 1;
+            
+            // Likelihood = average score (1-5 scale)
+            const L = avgScore;
+            
+            // Impact = override or default (1-5 scale)
+            const I = impactOverrides[cat] || DEFAULT_IMPACTS[cat];
+            
+            // Inherent Risk = L × I (1-25 scale)
+            const IR = L * I;
+            
+            // Control Effectiveness Fraction = (avg - 1) / 4 → 0.0 to 1.0
+            const CEf = (avgScore - 1) / 4;
+            
+            // Residual Risk = IR × (1 - CEf)
+            const RR = IR * (1 - CEf);
+            
+            // Determine risk level
+            let riskLevel;
+            if (RR <= 4) riskLevel = 'Low';
+            else if (RR <= 10) riskLevel = 'Medium';
+            else if (RR <= 17) riskLevel = 'High';
+            else riskLevel = 'Critical';
+
+            categoryScores[cat] = { L, I, IR, CEf, RR, riskLevel };
+            categoryDetails[cat] = { questions: catAnswers, calculations: { L, I, IR, CEf, RR, riskLevel } };
+        });
+
+        // Calculate overall scores
+        const allScores = Object.values(categoryScores);
+        const overallL = allScores.reduce((sum, s) => sum + s.L, 0) / allScores.length;
+        const overallRR = allScores.reduce((sum, s) => sum + s.RR, 0) / allScores.length;
+        
+        // Maturity level
+        let maturityLevel = MATURITY_LEVELS.find(m => overallL >= m.min && overallL <= m.max) || MATURITY_LEVELS[0];
+
+        return {
+            categoryScores,
+            categoryDetails,
+            overall: {
+                averageScore: overallL,
+                averageResidualRisk: overallRR,
+                maturityLevel: maturityLevel.name,
+                maturityColor: maturityLevel.color
+            }
+        };
+    };
+
+    const getRiskLevelColor = (level) => {
+        const colors = { Critical: 'risk-critical', High: 'risk-high', Medium: 'risk-medium', Low: 'risk-low' };
+        return colors[level] || 'bg-gray-500';
+    };
+
+    const getRiskLevelBadge = (level) => {
+        const colors = { Critical: 'bg-red-100 text-red-800', High: 'bg-orange-100 text-orange-800', Medium: 'bg-yellow-100 text-yellow-800', Low: 'bg-green-100 text-green-800' };
+        return colors[level] || 'bg-gray-100 text-gray-800';
+    };
+
+    // ==================== COMPONENTS ====================
+    const Icon = (name, className = '') => `<i class="fas fa-${name} ${className}"></i>`;
+
+    const Button = ({ text, onClick, variant = 'primary', icon = '', size = 'md', disabled = false, id = '' }) => {
+        const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2', lg: 'px-6 py-3 text-lg' };
+        const variants = {
+            primary: 'btn-primary text-white hover:shadow-lg',
+            secondary: 'bg-gray-200 text-gray-700 hover:bg-gray-300',
+            danger: 'bg-red-600 text-white hover:bg-red-700',
+            success: 'bg-green-600 text-white hover:bg-green-700',
+            outline: 'border-2 border-blue-500 text-blue-500 hover:bg-blue-50'
+        };
+        return `<button ${id ? `id="${id}"` : ''} class="${sizes[size]} ${variants[variant]} rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}" ${disabled ? 'disabled' : ''} onclick="${onClick}">${icon ? Icon(icon) : ''}${text}</button>`;
+    };
+
+    const Card = ({ title, content, className = '', icon = '', actions = '' }) => `
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden card-hover transition-all duration-300 ${className}">
+            ${title ? `<div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-800 flex items-center gap-2">${icon ? Icon(icon, 'text-blue-500') : ''}${title}</h3>
+                ${actions}
+            </div>` : ''}
+            <div class="p-6">${content}</div>
+        </div>`;
+
+    const StatCard = ({ title, value, icon, trend = '', color = 'blue' }) => `
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 card-hover transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">${title}</p>
+                    <p class="text-3xl font-bold text-gray-800">${value}</p>
+                    ${trend ? `<p class="text-sm ${trend.startsWith('+') ? 'text-green-500' : 'text-red-500'} mt-1">${trend}</p>` : ''}
+                </div>
+                <div class="w-14 h-14 bg-${color}-100 rounded-xl flex items-center justify-center">
+                    ${Icon(icon, `text-${color}-500 text-2xl`)}
+                </div>
+            </div>
+        </div>`;
+
+    const Modal = ({ id, title, content, size = 'md' }) => {
+        const sizes = { sm: 'max-w-md', md: 'max-w-2xl', lg: 'max-w-4xl', xl: 'max-w-6xl' };
+        return `
+        <div id="${id}" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl ${sizes[size]} w-full max-h-[90vh] overflow-hidden fade-in">
+                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <h3 class="text-xl font-semibold text-gray-800">${title}</h3>
+                    <button onclick="closeModal('${id}')" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        ${Icon('times', 'text-xl')}
+                    </button>
+                </div>
+                <div class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">${content}</div>
+            </div>
+        </div>`;
+    };
+
+    const openModal = (id) => document.getElementById(id).classList.replace('hidden', 'flex');
+    const closeModal = (id) => document.getElementById(id).classList.replace('flex', 'hidden');
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+
+    const Toast = (message, type = 'success') => {
+        const colors = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' };
+        const icons = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-4 rounded-xl shadow-lg z-50 flex items-center gap-3 fade-in`;
+        toast.innerHTML = `${Icon(icons[type], 'text-xl')}<span>${message}</span>`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    };
+    window.Toast = Toast;
+
+    // ==================== PAGE COMPONENTS ====================
+    const LoginPage = () => `
+        <div class="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 fade-in">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        ${Icon('shield-alt', 'text-blue-600 text-3xl')}
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">VendorRisk Pro</h1>
+                    <p class="text-gray-500 mt-2">Third-Party Vendor Risk Assessment</p>
+                </div>
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">${Icon('envelope')}</span>
+                                <input type="email" id="loginEmail" required class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="admin@fintech.com">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">${Icon('lock')}</span>
+                                <input type="password" id="loginPassword" required class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="••••••••">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full btn-primary text-white py-3 rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                            ${Icon('sign-in-alt')} Sign In
+                        </button>
+                    </div>
+                </form>
+                <div class="mt-6 p-4 bg-gray-50 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-2 font-medium">Demo Credentials:</p>
+                    <div class="text-xs text-gray-600 space-y-1">
+                        <p><span class="font-medium">Admin:</span> admin@fintech.com / admin123</p>
+                        <p><span class="font-medium">Security Manager:</span> security@fintech.com / security123</p>
+                        <p><span class="font-medium">Risk Reviewer:</span> reviewer@fintech.com / reviewer123</p>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+    window.handleLogin = (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const users = loadFromStorage('users', []);
+        const user = users.find(u => u.email === email && u.password === password);
+        if (user) {
+            const { password: _, ...safeUser } = user;
+            store.setState({ currentUser: safeUser, currentPage: 'dashboard' });
+            saveToStorage('currentUser', safeUser);
+            logAudit('LOGIN', { email: user.email });
+            Toast('Welcome back, ' + user.fullName);
+        } else {
+            Toast('Invalid credentials', 'error');
+        }
+    };
+
+    const Sidebar = () => {
+        const user = store.getState().currentUser;
+        const currentPage = store.getState().currentPage;
+        
+        const menuItems = [
+            { id: 'dashboard', label: 'Dashboard', icon: 'tachometer-alt', roles: ['Admin', 'SecurityManager', 'RiskReviewer', 'Viewer'] },
+            { id: 'vendors', label: 'Vendors', icon: 'building', roles: ['Admin', 'SecurityManager', 'RiskReviewer', 'Viewer'] },
+            { id: 'assessments', label: 'Assessments', icon: 'clipboard-check', roles: ['Admin', 'SecurityManager', 'RiskReviewer', 'Viewer'] },
+            { id: 'risk-register', label: 'Risk Register', icon: 'exclamation-triangle', roles: ['Admin', 'SecurityManager', 'RiskReviewer', 'Viewer'] },
+            { id: 'reports', label: 'Reports', icon: 'chart-bar', roles: ['Admin', 'SecurityManager', 'RiskReviewer', 'Viewer'] },
+            { id: 'mappings', label: 'Standards Mapping', icon: 'sitemap', roles: ['Admin', 'SecurityManager', 'RiskReviewer'] },
+            { id: 'audit-logs', label: 'Audit Logs', icon: 'history', roles: ['Admin'] },
+            { id: 'admin', label: 'Administration', icon: 'cog', roles: ['Admin'] }
+        ];
+
+        return `
+        <aside class="w-64 bg-gray-900 text-white min-h-screen flex flex-col">
+            <div class="p-6 border-b border-gray-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                        ${Icon('shield-alt', 'text-lg')}
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg">VendorRisk Pro</h1>
+                        <p class="text-xs text-gray-400">GRC Platform</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="flex-1 py-4">
+                ${menuItems.filter(item => item.roles.includes(user?.role)).map(item => `
+                    <a href="#" onclick="navigateTo('${item.id}')" class="sidebar-link flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all ${currentPage === item.id ? 'active text-white' : ''}">
+                        ${Icon(item.icon, 'w-5')} ${item.label}
+                    </a>
+                `).join('')}
+            </nav>
+            <div class="p-4 border-t border-gray-800">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center font-semibold">
+                        ${user?.fullName?.charAt(0) || 'U'}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate">${user?.fullName || 'User'}</p>
+                        <p class="text-xs text-gray-400">${user?.role || 'Role'}</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">
+                    ${Icon('sign-out-alt')} Sign Out
+                </button>
+            </div>
+        </aside>`;
+    };
+
+    window.handleLogout = () => {
+        logAudit('LOGOUT', {});
+        store.setState({ currentUser: null, currentPage: 'login' });
+        localStorage.removeItem('currentUser');
+        Toast('Logged out successfully');
+    };
+
+    window.navigateTo = (page) => {
+        store.setState({ currentPage: page });
+        render();
+    };
+
+    const DashboardPage = () => {
+        const vendors = loadFromStorage('vendors', []);
+        const assessments = loadFromStorage('assessments', []);
+        const risks = loadFromStorage('risks', []);
+        
+        const criticalRisks = risks.filter(r => r.riskLevel === 'Critical').length;
+        const highRisks = risks.filter(r => r.riskLevel === 'High').length;
+        const pendingAssessments = assessments.filter(a => a.status === 'draft').length;
+        
+        const recentAssessments = assessments.slice(0, 5);
+        
+        const riskDistribution = RISK_CATEGORIES.map(cat => {
+            const catRisks = risks.filter(r => r.category === cat);
+            return { category: cat, count: catRisks.length, avgRR: catRisks.length > 0 ? catRisks.reduce((sum, r) => sum + r.residualRisk, 0) / catRisks.length : 0 };
+        });
+
+        return `
+        <div class="p-8 fade-in">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+                <p class="text-gray-500 mt-1">Executive overview of your vendor risk posture</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                ${StatCard({ title: 'Total Vendors', value: vendors.length, icon: 'building', color: 'blue' })}
+                ${StatCard({ title: 'Critical Risks', value: criticalRisks, icon: 'exclamation-circle', color: 'red' })}
+                ${StatCard({ title: 'High Risks', value: highRisks, icon: 'exclamation-triangle', color: 'orange' })}
+                ${StatCard({ title: 'Pending Reviews', value: pendingAssessments, icon: 'clock', color: 'yellow' })}
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                ${Card({
+                    title: 'Executive Summary',
+                    icon: 'file-alt',
+                    content: `
+                        <div class="space-y-4">
+                            <div class="p-4 bg-blue-50 rounded-xl">
+                                <h4 class="font-semibold text-blue-800 mb-2">${Icon('info-circle')} Key Insights</h4>
+                                <ul class="text-sm text-blue-700 space-y-2">
+                                    <li>• ${vendors.length} vendors currently under management</li>
+                                    <li>• ${criticalRisks + highRisks} risks require immediate attention</li>
+                                    <li>• ${assessments.filter(a => a.status === 'final').length} assessments completed this period</li>
+                                    <li>• Focus areas: ${riskDistribution.sort((a,b) => b.avgRR - a.avgRR).slice(0, 2).map(r => r.category).join(', ') || 'None identified'}</li>
+                                </ul>
+                            </div>
+                            ${criticalRisks > 0 ? `<div class="p-4 bg-red-50 rounded-xl">
+                                <h4 class="font-semibold text-red-800 mb-2">${Icon('exclamation-triangle')} Action Required</h4>
+                                <p class="text-sm text-red-700">${criticalRisks} critical risk(s) require immediate executive decision.</p>
+                            </div>` : `<div class="p-4 bg-green-50 rounded-xl">
+                                <h4 class="font-semibold text-green-800 mb-2">${Icon('check-circle')} Status</h4>
+                                <p class="text-sm text-green-700">No critical risks currently identified.</p>
+                            </div>`}
+                        </div>
+                    `
+                })}
+
+                ${Card({
+                    title: 'Risk Distribution by Category',
+                    icon: 'chart-pie',
+                    content: `
+                        <div class="space-y-4">
+                            ${riskDistribution.map(r => {
+                                const percentage = r.avgRR ? Math.min((r.avgRR / 25) * 100, 100) : 0;
+                                const color = r.avgRR > 17 ? 'red' : r.avgRR > 10 ? 'orange' : r.avgRR > 4 ? 'yellow' : 'green';
+                                return `
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">${r.category}</span>
+                                        <span class="font-medium">${r.avgRR.toFixed(1)}</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-${color}-500 rounded-full transition-all" style="width: ${percentage}%"></div>
+                                    </div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    `
+                })}
+
+                ${Card({
+                    title: 'Recent Assessments',
+                    icon: 'clipboard-list',
+                    actions: Button({ text: 'View All', onClick: "navigateTo('assessments')", variant: 'outline', size: 'sm' }),
+                    content: recentAssessments.length > 0 ? `
+                        <div class="space-y-3">
+                            ${recentAssessments.map(a => {
+                                const vendor = vendors.find(v => v.id === a.vendorId);
+                                return `
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div>
+                                        <p class="font-medium text-gray-800">${vendor?.name || 'Unknown Vendor'}</p>
+                                        <p class="text-xs text-gray-500">${formatDate(a.createdAt)}</p>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${a.status === 'final' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                        ${a.status === 'final' ? 'Completed' : 'Draft'}
+                                    </span>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    ` : '<p class="text-gray-500 text-center py-8">No assessments yet</p>'
+                })}
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                ${Card({
+                    title: 'Risk Levels Overview',
+                    icon: 'tachometer-alt',
+                    content: `
+                        <div class="grid grid-cols-4 gap-4">
+                            ${[
+                                { level: 'Critical', count: risks.filter(r => r.riskLevel === 'Critical').length, class: 'risk-critical' },
+                                { level: 'High', count: risks.filter(r => r.riskLevel === 'High').length, class: 'risk-high' },
+                                { level: 'Medium', count: risks.filter(r => r.riskLevel === 'Medium').length, class: 'risk-medium' },
+                                { level: 'Low', count: risks.filter(r => r.riskLevel === 'Low').length, class: 'risk-low' }
+                            ].map(r => `
+                                <div class="${r.class} rounded-xl p-4 text-white text-center">
+                                    <p class="text-3xl font-bold">${r.count}</p>
+                                    <p class="text-sm opacity-90">${r.level}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `
+                })}
+
+                ${Card({
+                    title: 'Quick Actions',
+                    icon: 'bolt',
+                    content: `
+                        <div class="grid grid-cols-2 gap-4">
+                            ${hasPermission(['Admin', 'SecurityManager']) ? `
+                            <button onclick="openModal('newVendorModal')" class="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all group">
+                                <div class="text-center">
+                                    ${Icon('plus-circle', 'text-2xl text-gray-400 group-hover:text-blue-500')}
+                                    <p class="mt-2 font-medium text-gray-700">Add Vendor</p>
+                                </div>
+                            </button>
+                            <button onclick="startNewAssessment()" class="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition-all group">
+                                <div class="text-center">
+                                    ${Icon('clipboard-check', 'text-2xl text-gray-400 group-hover:text-green-500')}
+                                    <p class="mt-2 font-medium text-gray-700">New Assessment</p>
+                                </div>
+                            </button>
+                            ` : ''}
+                            <button onclick="navigateTo('reports')" class="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all group">
+                                <div class="text-center">
+                                    ${Icon('file-export', 'text-2xl text-gray-400 group-hover:text-purple-500')}
+                                    <p class="mt-2 font-medium text-gray-700">Export Reports</p>
+                                </div>
+                            </button>
+                            <button onclick="navigateTo('risk-register')" class="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition-all group">
+                                <div class="text-center">
+                                    ${Icon('list-alt', 'text-2xl text-gray-400 group-hover:text-orange-500')}
+                                    <p class="mt-2 font-medium text-gray-700">Risk Register</p>
+                                </div>
+                            </button>
+                        </div>
+                    `
+                })}
+            </div>
+        </div>
+        
+        ${Modal({
+            id: 'newVendorModal',
+            title: 'Add New Vendor',
+            content: `
+                <form id="newVendorForm" onsubmit="handleAddVendor(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Vendor Name *</label>
+                            <input type="text" id="vendorName" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Vendor Type *</label>
+                            <select id="vendorType" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                                ${VENDOR_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea id="vendorDescription" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                            <input type="email" id="vendorEmail" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="flex gap-3 pt-4">
+                            <button type="button" onclick="closeModal('newVendorModal')" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all">Cancel</button>
+                            <button type="submit" class="flex-1 btn-primary text-white px-4 py-3 rounded-xl">Add Vendor</button>
+                        </div>
+                    </div>
+                </form>
+            `
+        })}`;
+    };
+
+    window.handleAddVendor = (e) => {
+        e.preventDefault();
+        const vendors = loadFromStorage('vendors', []);
+        const newVendor = {
+            id: Date.now(),
+            name: document.getElementById('vendorName').value,
+            type: document.getElementById('vendorType').value,
+            description: document.getElementById('vendorDescription').value,
+            contactEmail: document.getElementById('vendorEmail').value,
+            createdAt: new Date().toISOString()
+        };
+        vendors.push(newVendor);
+        saveToStorage('vendors', vendors);
+        logAudit('CREATE_VENDOR', { vendorId: newVendor.id, vendorName: newVendor.name });
+        closeModal('newVendorModal');
+        Toast('Vendor added successfully');
+        render();
+    };
+
+    window.startNewAssessment = () => {
+        store.setState({ currentPage: 'assessment-wizard', assessmentWizard: { step: 1, vendorId: null, answers: [], impactOverrides: {} } });
+        render();
+    };
+
+    const VendorsPage = () => {
+        const vendors = loadFromStorage('vendors', []);
+        const assessments = loadFromStorage('assessments', []);
+        
+        return `
+        <div class="p-8 fade-in">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Vendors</h1>
+                    <p class="text-gray-500 mt-1">Manage your third-party vendors</p>
+                </div>
+                <div class="flex gap-3">
+                    ${hasPermission(['Admin', 'SecurityManager']) ? `
+                    ${Button({ text: 'Import CSV', onClick: "openModal('importVendorModal')", icon: 'file-import', variant: 'secondary' })}
+                    ${Button({ text: 'Add Vendor', onClick: "openModal('newVendorModal')", icon: 'plus' })}
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Vendor</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assessments</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Assessment</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Risk Level</th>
+                                <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            ${vendors.map(vendor => {
+                                const vendorAssessments = assessments.filter(a => a.vendorId === vendor.id);
+                                const lastAssessment = vendorAssessments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+                                const riskLevel = lastAssessment?.overallRiskLevel || 'Not Assessed';
+                                return `
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                ${Icon('building', 'text-blue-500')}
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-800">${vendor.name}</p>
+                                                <p class="text-sm text-gray-500">${vendor.contactEmail || 'No email'}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">${vendor.type}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-600">${vendorAssessments.length}</td>
+                                    <td class="px-6 py-4 text-gray-600">${lastAssessment ? formatDate(lastAssessment.createdAt) : 'Never'}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium ${getRiskLevelBadge(riskLevel)}">${riskLevel}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <button onclick="viewVendor(${vendor.id})" class="p-2 text-gray-400 hover:text-blue-500 transition-colors" title="View Details">
+                                                ${Icon('eye')}
+                                            </button>
+                                            ${hasPermission(['Admin', 'SecurityManager']) ? `
+                                            <button onclick="editVendor(${vendor.id})" class="p-2 text-gray-400 hover:text-yellow-500 transition-colors" title="Edit Vendor">
+                                                ${Icon('edit')}
+                                            </button>
+                                            <button onclick="startAssessmentForVendor(${vendor.id})" class="p-2 text-gray-400 hover:text-green-500 transition-colors" title="Start Assessment">
+                                                ${Icon('clipboard-check')}
+                                            </button>
+                                            <button onclick="deleteVendor(${vendor.id})" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Delete">
+                                                ${Icon('trash')}
+                                            </button>
+                                            ` : ''}
+                                        </div>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ${vendors.length === 0 ? `
+                <div class="p-12 text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        ${Icon('building', 'text-gray-400 text-2xl')}
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">No vendors yet</h3>
+                    <p class="text-gray-500 mb-4">Get started by adding your first vendor</p>
+                    ${hasPermission(['Admin', 'SecurityManager']) ? Button({ text: 'Add Vendor', onClick: "openModal('newVendorModal')", icon: 'plus' }) : ''}
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        
+        ${Modal({
+            id: 'newVendorModal',
+            title: 'Add New Vendor',
+            content: `
+                <form id="newVendorForm" onsubmit="handleAddVendor(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Vendor Name *</label>
+                            <input type="text" id="vendorName" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Vendor Type *</label>
+                            <select id="vendorType" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                                ${VENDOR_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea id="vendorDescription" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                            <input type="email" id="vendorEmail" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="flex gap-3 pt-4">
+                            <button type="button" onclick="closeModal('newVendorModal')" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all">Cancel</button>
+                            <button type="submit" class="flex-1 btn-primary text-white px-4 py-3 rounded-xl">Add Vendor</button>
+                        </div>
+                    </div>
+                </form>
+            `
+        })}
+        
+        ${Modal({
+            id: 'vendorDetailModal',
+            title: 'Vendor Details',
+            size: 'lg',
+            content: '<div id="vendorDetailContent"></div>'
+        })}
+        
+        ${Modal({
+            id: 'importVendorModal',
+            title: 'Import Vendors from CSV',
+            content: `
+                <div class="space-y-4">
+                    <div class="p-4 bg-blue-50 rounded-xl">
+                        <h4 class="font-medium text-blue-800 mb-2">${Icon('info-circle')} CSV Format</h4>
+                        <p class="text-sm text-blue-700">Your CSV should have headers: <code class="bg-blue-100 px-1 rounded">name,type,description,contactEmail</code></p>
+                        <p class="text-sm text-blue-700 mt-1">Valid types: Cloud Service Provider, Payment Gateway, Email/Collab Service</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select CSV File</label>
+                        <input type="file" id="vendorCsvFile" accept=".csv" class="w-full px-4 py-3 border border-gray-200 rounded-xl">
+                    </div>
+                    <div id="csvPreview" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Preview (first 5 rows)</label>
+                        <div id="csvPreviewContent" class="bg-gray-50 rounded-xl p-4 max-h-48 overflow-auto text-sm"></div>
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="closeModal('importVendorModal')" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50">Cancel</button>
+                        <button type="button" onclick="processVendorCsv()" class="flex-1 btn-primary text-white px-4 py-3 rounded-xl">Import Vendors</button>
+                    </div>
+                </div>
+            `
+        })}`;
+    };
+
+    window.viewVendor = (vendorId) => {
+        const vendors = loadFromStorage('vendors', []);
+        const assessments = loadFromStorage('assessments', []);
+        const vendor = vendors.find(v => v.id === vendorId);
+        const vendorAssessments = assessments.filter(a => a.vendorId === vendorId);
+        
+        document.getElementById('vendorDetailContent').innerHTML = `
+            <div class="space-y-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="text-sm text-gray-500">Vendor Name</label>
+                        <p class="font-medium text-gray-800">${vendor.name}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">Type</label>
+                        <p class="font-medium text-gray-800">${vendor.type}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">Contact Email</label>
+                        <p class="font-medium text-gray-800">${vendor.contactEmail || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">Created</label>
+                        <p class="font-medium text-gray-800">${formatDate(vendor.createdAt)}</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-sm text-gray-500">Description</label>
+                    <p class="text-gray-800">${vendor.description || 'No description provided'}</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-3">Assessment History</h4>
+                    ${vendorAssessments.length > 0 ? `
+                    <div class="space-y-2">
+                        ${vendorAssessments.map(a => `
+                        <div class="p-4 bg-gray-50 rounded-xl flex items-center justify-between">
+                            <div>
+                                <p class="font-medium">${formatDate(a.createdAt)}</p>
+                                <p class="text-sm text-gray-500">Maturity: ${a.maturityLevel || 'N/A'}</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="px-3 py-1 rounded-full text-xs font-medium ${getRiskLevelBadge(a.overallRiskLevel || 'Low')}">${a.overallRiskLevel || 'Low'}</span>
+                                <button onclick="viewAssessmentDetail(${a.id})" class="text-blue-500 hover:text-blue-700">View</button>
+                            </div>
+                        </div>
+                        `).join('')}
+                    </div>
+                    ` : '<p class="text-gray-500">No assessments conducted yet</p>'}
+                </div>
+            </div>
+        `;
+        openModal('vendorDetailModal');
+    };
+
+    window.startAssessmentForVendor = (vendorId) => {
+        store.setState({ currentPage: 'assessment-wizard', assessmentWizard: { step: 1, vendorId, answers: [], impactOverrides: {} } });
+        render();
+    };
+
+    window.deleteVendor = (vendorId) => {
+        if (confirm('Are you sure you want to delete this vendor? This action cannot be undone.')) {
+            let vendors = loadFromStorage('vendors', []);
+            vendors = vendors.filter(v => v.id !== vendorId);
+            saveToStorage('vendors', vendors);
+            logAudit('DELETE_VENDOR', { vendorId });
+            Toast('Vendor deleted successfully');
+            render();
+        }
+    };
+    
+    window.processVendorCsv = () => {
+        const fileInput = document.getElementById('vendorCsvFile');
+        const file = fileInput.files[0];
+        if (!file) {
+            Toast('Please select a CSV file', 'warning');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target.result;
+            const lines = text.split('\n').filter(l => l.trim());
+            if (lines.length < 2) {
+                Toast('CSV file is empty or has no data rows', 'error');
+                return;
+            }
+            
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
+            const nameIdx = headers.indexOf('name');
+            const typeIdx = headers.indexOf('type');
+            const descIdx = headers.indexOf('description');
+            const emailIdx = headers.indexOf('contactemail');
+            
+            if (nameIdx === -1) {
+                Toast('CSV must have a "name" column', 'error');
+                return;
+            }
+            
+            const vendors = loadFromStorage('vendors', []);
+            let imported = 0;
+            
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, ''));
+                const name = cols[nameIdx];
+                if (!name) continue;
+                
+                let type = typeIdx >= 0 ? cols[typeIdx] : 'Cloud Service Provider';
+                if (!VENDOR_TYPES.includes(type)) type = 'Cloud Service Provider';
+                
+                vendors.push({
+                    id: Date.now() + i,
+                    name,
+                    type,
+                    description: descIdx >= 0 ? cols[descIdx] : '',
+                    contactEmail: emailIdx >= 0 ? cols[emailIdx] : '',
+                    createdAt: new Date().toISOString()
+                });
+                imported++;
+            }
+            
+            saveToStorage('vendors', vendors);
+            logAudit('IMPORT_VENDORS', { count: imported });
+            closeModal('importVendorModal');
+            Toast(`Successfully imported ${imported} vendors`);
+            render();
+        };
+        reader.readAsText(file);
+    };
+
+    const AssessmentWizardPage = () => {
+        const wizard = store.getState().assessmentWizard || { step: 1, vendorId: null, answers: [], impactOverrides: {} };
+        const vendors = loadFromStorage('vendors', []);
+        const questions = loadFromStorage('questions', QUESTIONS);
+        
+        const steps = [
+            { num: 1, title: 'Select Vendor' },
+            { num: 2, title: 'Answer Questions' },
+            { num: 3, title: 'Review & Adjust' },
+            { num: 4, title: 'Results' }
+        ];
+
+        const renderStep = () => {
+            switch (wizard.step) {
+                case 1:
+                    return `
+                        <div class="max-w-2xl mx-auto">
+                            <h2 class="text-xl font-semibold text-gray-800 mb-6">Select Vendor for Assessment</h2>
+                            <div class="space-y-3">
+                                ${vendors.map(v => `
+                                <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all hover:border-blue-300 ${wizard.vendorId === v.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}">
+                                    <input type="radio" name="vendor" value="${v.id}" ${wizard.vendorId === v.id ? 'checked' : ''} onchange="selectVendor(${v.id})" class="w-4 h-4 text-blue-600">
+                                    <div class="ml-4 flex-1">
+                                        <p class="font-medium text-gray-800">${v.name}</p>
+                                        <p class="text-sm text-gray-500">${v.type}</p>
+                                    </div>
+                                    <span class="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">${v.type}</span>
+                                </label>
+                                `).join('')}
+                            </div>
+                            ${vendors.length === 0 ? '<p class="text-center text-gray-500 py-8">No vendors available. Please add a vendor first.</p>' : ''}
+                        </div>
+                    `;
+                case 2:
+                    return `
+                        <div class="max-w-4xl mx-auto">
+                            <h2 class="text-xl font-semibold text-gray-800 mb-2">Security Assessment Questions</h2>
+                            <p class="text-gray-500 mb-6">Answer all questions based on the vendor's current security posture</p>
+                            <div class="space-y-8">
+                                ${RISK_CATEGORIES.map(category => {
+                                    const catQuestions = questions.filter(q => q.category === category);
+                                    return `
+                                    <div class="bg-gray-50 rounded-xl p-6">
+                                        <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                            ${Icon('folder', 'text-blue-500')} ${category}
+                                        </h3>
+                                        <div class="space-y-4">
+                                            ${catQuestions.map((q, idx) => {
+                                                const answer = wizard.answers.find(a => a.questionId === q.id);
+                                                return `
+                                                <div class="bg-white p-4 rounded-lg shadow-sm" id="question-${q.id}">
+                                                    <p class="text-gray-800 mb-3">${idx + 1}. ${q.text}</p>
+                                                    <div class="flex gap-3 mb-3">
+                                                        ${[{ label: 'Yes', value: 5, key: 'yes' }, { label: 'Partial', value: 3, key: 'partial' }, { label: 'No', value: 1, key: 'no' }].map(opt => `
+                                                        <div class="flex-1 answer-option p-3 border-2 border-gray-200 rounded-lg text-center cursor-pointer ${answer?.score === opt.value ? 'selected-' + opt.key : ''}" onclick="setAnswer(${q.id}, ${opt.value}, '${opt.key}')">
+                                                            <span class="font-medium">${opt.label}</span>
+                                                            <span class="text-xs text-gray-500 block">(${opt.value} pts)</span>
+                                                        </div>
+                                                        `).join('')}
+                                                    </div>
+                                                    <input type="text" placeholder="Add comment (optional)" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg" id="comment-${q.id}" value="${answer?.comment || ''}" onchange="setAnswerComment(${q.id}, this.value)">
+                                                    <div class="mt-2 text-xs text-gray-400">
+                                                        ISO: ${q.iso_controls.join(', ')} | NIST: ${q.nist_functions.join(', ')}
+                                                    </div>
+                                                </div>`;
+                                            }).join('')}
+                                        </div>
+                                    </div>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                case 3:
+                    const previewResults = calculateRiskScores(wizard.answers, wizard.impactOverrides);
+                    return `
+                        <div class="max-w-4xl mx-auto">
+                            <h2 class="text-xl font-semibold text-gray-800 mb-2">Review & Adjust Impact Ratings</h2>
+                            <p class="text-gray-500 mb-6">Review the calculated scores and adjust impact ratings if needed</p>
+                            
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                                    <h3 class="font-semibold text-gray-800 mb-4">Impact Overrides</h3>
+                                    <p class="text-sm text-gray-500 mb-4">Adjust the business impact for each category (1-5 scale)</p>
+                                    <div class="space-y-4">
+                                        ${RISK_CATEGORIES.map(cat => {
+                                            const current = wizard.impactOverrides[cat] || DEFAULT_IMPACTS[cat];
+                                            return `
+                                            <div>
+                                                <label class="flex items-center justify-between mb-2">
+                                                    <span class="text-sm font-medium text-gray-700">${cat}</span>
+                                                    <span class="text-sm text-gray-500">Current: ${current}</span>
+                                                </label>
+                                                <input type="range" min="1" max="5" value="${current}" onchange="setImpactOverride('${cat}', this.value)" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                                    <span>Negligible</span>
+                                                    <span>Catastrophic</span>
+                                                </div>
+                                            </div>`;
+                                        }).join('')}
+                                    </div>
+                                </div>
+
+                                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                                    <h3 class="font-semibold text-gray-800 mb-4">Preview Results</h3>
+                                    <div class="space-y-4">
+                                        ${RISK_CATEGORIES.map(cat => {
+                                            const score = previewResults.categoryScores[cat];
+                                            return `
+                                            <div class="p-3 bg-gray-50 rounded-lg">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <span class="text-sm font-medium">${cat}</span>
+                                                    <span class="px-2 py-1 rounded text-xs font-medium ${getRiskLevelBadge(score.riskLevel)}">${score.riskLevel}</span>
+                                                </div>
+                                                <div class="grid grid-cols-4 gap-2 text-xs text-gray-500">
+                                                    <div>L: ${score.L.toFixed(2)}</div>
+                                                    <div>I: ${score.I}</div>
+                                                    <div>IR: ${score.IR.toFixed(2)}</div>
+                                                    <div>RR: ${score.RR.toFixed(2)}</div>
+                                                </div>
+                                            </div>`;
+                                        }).join('')}
+                                    </div>
+                                    <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                                        <p class="text-sm text-blue-800">
+                                            <strong>Overall Maturity:</strong> ${previewResults.overall.maturityLevel}<br>
+                                            <strong>Average Score:</strong> ${previewResults.overall.averageScore.toFixed(2)}/5.0
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-yellow-50 rounded-xl">
+                                <h4 class="font-medium text-yellow-800 mb-2">${Icon('info-circle')} Calculation Methodology</h4>
+                                <div class="text-sm text-yellow-700 space-y-1">
+                                    <p><strong>L (Likelihood)</strong> = Average of question scores per category (1-5)</p>
+                                    <p><strong>IR (Inherent Risk)</strong> = L × I (1-25 scale)</p>
+                                    <p><strong>CEf (Control Effectiveness)</strong> = (avg_score - 1) / 4 → 0.0 to 1.0</p>
+                                    <p><strong>RR (Residual Risk)</strong> = IR × (1 - CEf)</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 4:
+                    const finalResults = calculateRiskScores(wizard.answers, wizard.impactOverrides);
+                    const vendor = vendors.find(v => v.id === wizard.vendorId);
+                    return `
+                        <div class="max-w-5xl mx-auto">
+                            <div class="text-center mb-8">
+                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    ${Icon('check-circle', 'text-green-500 text-3xl')}
+                                </div>
+                                <h2 class="text-2xl font-bold text-gray-800">Assessment Complete</h2>
+                                <p class="text-gray-500 mt-2">Risk assessment for ${vendor?.name || 'Unknown Vendor'}</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                                    <h3 class="font-medium opacity-90 mb-2">Security Maturity</h3>
+                                    <p class="text-3xl font-bold">${finalResults.overall.maturityLevel}</p>
+                                    <p class="text-sm opacity-75 mt-2">Score: ${finalResults.overall.averageScore.toFixed(2)}/5.0</p>
+                                </div>
+                                <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                                    <h3 class="font-medium opacity-90 mb-2">Avg Residual Risk</h3>
+                                    <p class="text-3xl font-bold">${finalResults.overall.averageResidualRisk.toFixed(2)}</p>
+                                    <p class="text-sm opacity-75 mt-2">Scale: 0-25</p>
+                                </div>
+                                <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+                                    <h3 class="font-medium opacity-90 mb-2">Questions Answered</h3>
+                                    <p class="text-3xl font-bold">${wizard.answers.length}/18</p>
+                                    <p class="text-sm opacity-75 mt-2">All categories covered</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8">
+                                <div class="px-6 py-4 border-b border-gray-100">
+                                    <h3 class="font-semibold text-gray-800">Risk Breakdown by Category</h3>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Category</th>
+                                                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Likelihood (L)</th>
+                                                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Impact (I)</th>
+                                                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Inherent Risk</th>
+                                                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Control Eff.</th>
+                                                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Residual Risk</th>
+                                                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Level</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-100">
+                                            ${RISK_CATEGORIES.map(cat => {
+                                                const s = finalResults.categoryScores[cat];
+                                                return `
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-6 py-4 font-medium text-gray-800">${cat}</td>
+                                                    <td class="px-6 py-4 text-center">${s.L.toFixed(2)}</td>
+                                                    <td class="px-6 py-4 text-center">${s.I}</td>
+                                                    <td class="px-6 py-4 text-center">${s.IR.toFixed(2)}</td>
+                                                    <td class="px-6 py-4 text-center">${(s.CEf * 100).toFixed(0)}%</td>
+                                                    <td class="px-6 py-4 text-center font-medium">${s.RR.toFixed(2)}</td>
+                                                    <td class="px-6 py-4 text-center">
+                                                        <span class="px-3 py-1 rounded-full text-xs font-medium ${getRiskLevelBadge(s.riskLevel)}">${s.riskLevel}</span>
+                                                    </td>
+                                                </tr>`;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4 justify-center">
+                                ${Button({ text: 'Save as Draft', onClick: 'saveAssessment("draft")', variant: 'secondary', icon: 'save' })}
+                                ${Button({ text: 'Submit Final Assessment', onClick: 'saveAssessment("final")', variant: 'primary', icon: 'check-circle' })}
+                            </div>
+                        </div>
+                    `;
+                default:
+                    return '<p>Unknown step</p>';
+            }
+        };
+
+        return `
+        <div class="p-8 fade-in">
+            <div class="mb-8">
+                <button onclick="navigateTo('dashboard')" class="text-gray-500 hover:text-gray-700 mb-4 flex items-center gap-2">
+                    ${Icon('arrow-left')} Back to Dashboard
+                </button>
+                <h1 class="text-3xl font-bold text-gray-800">New Vendor Assessment</h1>
+            </div>
+
+            <!-- Progress Steps -->
+            <div class="flex items-center justify-center mb-12">
+                ${steps.map((step, idx) => `
+                <div class="progress-step flex items-center ${wizard.step > step.num ? 'completed' : ''} ${wizard.step === step.num ? 'active' : ''}">
+                    <div class="step-circle w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center font-semibold text-gray-500 ${wizard.step >= step.num ? 'bg-blue-500 border-blue-500 text-white' : ''}">
+                        ${wizard.step > step.num ? Icon('check') : step.num}
+                    </div>
+                    <span class="ml-2 text-sm font-medium ${wizard.step >= step.num ? 'text-gray-800' : 'text-gray-400'}">${step.title}</span>
+                    ${idx < steps.length - 1 ? '<div class="w-24 h-0.5 mx-4 bg-gray-200"></div>' : ''}
+                </div>
+                `).join('')}
+            </div>
+
+            <!-- Step Content -->
+            <div class="mb-8">
+                ${renderStep()}
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex justify-between max-w-4xl mx-auto pt-6 border-t border-gray-200">
+                ${wizard.step > 1 ? Button({ text: 'Previous', onClick: 'wizardPrevStep()', variant: 'secondary', icon: 'arrow-left' }) : '<div></div>'}
+                ${wizard.step < 4 ? Button({ text: 'Next', onClick: 'wizardNextStep()', variant: 'primary', icon: 'arrow-right' }) : ''}
+            </div>
+        </div>`;
+    };
+
+    window.selectVendor = (vendorId) => {
+        const wizard = store.getState().assessmentWizard;
+        store.setState({ assessmentWizard: { ...wizard, vendorId } });
+    };
+
+    window.setAnswer = (questionId, score, key) => {
+        const wizard = store.getState().assessmentWizard;
+        const answers = [...wizard.answers];
+        const existingIdx = answers.findIndex(a => a.questionId === questionId);
+        if (existingIdx >= 0) {
+            answers[existingIdx].score = parseInt(score);
+        } else {
+            answers.push({ questionId, score: parseInt(score), comment: '' });
+        }
+        store.setState({ assessmentWizard: { ...wizard, answers } });
+        
+        // Update UI immediately
+        const questionEl = document.getElementById(`question-${questionId}`);
+        if (questionEl) {
+            questionEl.querySelectorAll('.answer-option').forEach(el => {
+                el.classList.remove('selected-yes', 'selected-partial', 'selected-no');
+            });
+            const options = questionEl.querySelectorAll('.answer-option');
+            const optIndex = score === 5 ? 0 : score === 3 ? 1 : 2;
+            if (options[optIndex]) {
+                options[optIndex].classList.add('selected-' + key);
+            }
+        }
+    };
+    
+    window.setAnswerComment = (questionId, comment) => {
+        const wizard = store.getState().assessmentWizard;
+        const answers = [...wizard.answers];
+        const existingIdx = answers.findIndex(a => a.questionId === questionId);
+        if (existingIdx >= 0) {
+            answers[existingIdx].comment = comment;
+        }
+        store.setState({ assessmentWizard: { ...wizard, answers } });
+    };
+
+    window.setImpactOverride = (category, value) => {
+        const wizard = store.getState().assessmentWizard;
+        const impactOverrides = { ...wizard.impactOverrides, [category]: parseInt(value) };
+        store.setState({ assessmentWizard: { ...wizard, impactOverrides } });
+        render();
+    };
+
+    window.wizardNextStep = () => {
+        const wizard = store.getState().assessmentWizard;
+        if (wizard.step === 1 && !wizard.vendorId) {
+            Toast('Please select a vendor', 'warning');
+            return;
+        }
+        if (wizard.step === 2 && wizard.answers.length < 18) {
+            Toast('Please answer all questions', 'warning');
+            return;
+        }
+        store.setState({ assessmentWizard: { ...wizard, step: wizard.step + 1 } });
+        render();
+    };
+
+    window.wizardPrevStep = () => {
+        const wizard = store.getState().assessmentWizard;
+        store.setState({ assessmentWizard: { ...wizard, step: wizard.step - 1 } });
+        render();
+    };
+
+    window.saveAssessment = (status) => {
+        const wizard = store.getState().assessmentWizard;
+        const results = calculateRiskScores(wizard.answers, wizard.impactOverrides);
+        const assessments = loadFromStorage('assessments', []);
+        const risks = loadFromStorage('risks', []);
+        const user = store.getState().currentUser;
+
+        const assessment = {
+            id: Date.now(),
+            vendorId: wizard.vendorId,
+            questionnaireId: 1,
+            createdBy: user.id,
+            status,
+            answers: wizard.answers,
+            impactOverrides: wizard.impactOverrides,
+            categoryScores: results.categoryScores,
+            maturityLevel: results.overall.maturityLevel,
+            overallScore: results.overall.averageScore,
+            overallRiskLevel: Object.values(results.categoryScores).some(s => s.riskLevel === 'Critical') ? 'Critical' :
+                             Object.values(results.categoryScores).some(s => s.riskLevel === 'High') ? 'High' :
+                             Object.values(results.categoryScores).some(s => s.riskLevel === 'Medium') ? 'Medium' : 'Low',
+            createdAt: new Date().toISOString()
+        };
+
+        assessments.push(assessment);
+        saveToStorage('assessments', assessments);
+
+        // Create risk entries
+        if (status === 'final') {
+            RISK_CATEGORIES.forEach(cat => {
+                const score = results.categoryScores[cat];
+                if (score.riskLevel !== 'Low') {
+                    risks.push({
+                        id: Date.now() + Math.random(),
+                        vendorId: wizard.vendorId,
+                        assessmentId: assessment.id,
+                        title: `${cat} Risk - ${score.riskLevel}`,
+                        category: cat,
+                        inherentRisk: score.IR,
+                        residualRisk: score.RR,
+                        riskLevel: score.riskLevel,
+                        recommendedAction: score.riskLevel === 'Critical' ? 'Avoid' : score.riskLevel === 'High' ? 'Mitigate' : 'Accept',
+                        riskOwner: null,
+                        reviewer: null,
+                        approver: null,
+                        decisionMemo: '',
+                        status: 'Open',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+            });
+            saveToStorage('risks', risks);
+        }
+
+        logAudit('CREATE_ASSESSMENT', { assessmentId: assessment.id, vendorId: wizard.vendorId, status });
+        Toast(status === 'final' ? 'Assessment submitted successfully!' : 'Draft saved');
+        store.setState({ currentPage: 'assessments', assessmentWizard: null });
+        render();
+    };
+
+    const AssessmentsPage = () => {
+        const assessments = loadFromStorage('assessments', []);
+        const vendors = loadFromStorage('vendors', []);
+
+        return `
+        <div class="p-8 fade-in">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Assessments</h1>
+                    <p class="text-gray-500 mt-1">View and manage vendor assessments</p>
+                </div>
+                ${hasPermission(['Admin', 'SecurityManager']) ? Button({ text: 'New Assessment', onClick: 'startNewAssessment()', icon: 'plus' }) : ''}
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Vendor</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Maturity</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Overall Risk</th>
+                                <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            ${assessments.map(a => {
+                                const vendor = vendors.find(v => v.id === a.vendorId);
+                                return `
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                ${Icon('clipboard-check', 'text-blue-500')}
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-800">${vendor?.name || 'Unknown'}</p>
+                                                <p class="text-sm text-gray-500">ID: ${a.id}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-600">${formatDate(a.createdAt)}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium ${a.status === 'final' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                            ${a.status === 'final' ? 'Completed' : 'Draft'}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="font-medium text-gray-800">${a.maturityLevel || 'N/A'}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium ${getRiskLevelBadge(a.overallRiskLevel || 'Low')}">${a.overallRiskLevel || 'Low'}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button onclick="viewAssessmentDetail(${a.id})" class="text-blue-500 hover:text-blue-700 font-medium">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ${assessments.length === 0 ? `
+                <div class="p-12 text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        ${Icon('clipboard-list', 'text-gray-400 text-2xl')}
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">No assessments yet</h3>
+                    <p class="text-gray-500 mb-4">Start by conducting your first vendor assessment</p>
+                    ${hasPermission(['Admin', 'SecurityManager']) ? Button({ text: 'New Assessment', onClick: 'startNewAssessment()', icon: 'plus' }) : ''}
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        
+        ${Modal({
+            id: 'assessmentDetailModal',
+            title: 'Assessment Details',
+            size: 'xl',
+            content: '<div id="assessmentDetailContent"></div>'
+        })}`;
+    };
+
+    window.viewAssessmentDetail = (assessmentId) => {
+        const assessments = loadFromStorage('assessments', []);
+        const vendors = loadFromStorage('vendors', []);
+        const questions = loadFromStorage('questions', QUESTIONS);
+        const a = assessments.find(x => x.id === assessmentId);
+        const vendor = vendors.find(v => v.id === a?.vendorId);
+
+        if (!a) return;
+
+        document.getElementById('assessmentDetailContent').innerHTML = `
+            <div class="space-y-6">
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <p class="text-sm text-gray-500">Vendor</p>
+                        <p class="font-semibold text-gray-800">${vendor?.name || 'Unknown'}</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <p class="text-sm text-gray-500">Date</p>
+                        <p class="font-semibold text-gray-800">${formatDateTime(a.createdAt)}</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <p class="text-sm text-gray-500">Maturity Level</p>
+                        <p class="font-semibold text-gray-800">${a.maturityLevel}</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <p class="text-sm text-gray-500">Overall Score</p>
+                        <p class="font-semibold text-gray-800">${a.overallScore?.toFixed(2)}/5.0</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-3">Risk Scores by Category</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Category</th>
+                                    <th class="px-4 py-2 text-center">L</th>
+                                    <th class="px-4 py-2 text-center">I</th>
+                                    <th class="px-4 py-2 text-center">IR</th>
+                                    <th class="px-4 py-2 text-center">CEf</th>
+                                    <th class="px-4 py-2 text-center">RR</th>
+                                    <th class="px-4 py-2 text-center">Level</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                ${RISK_CATEGORIES.map(cat => {
+                                    const s = a.categoryScores?.[cat] || {};
+                                    return `
+                                    <tr>
+                                        <td class="px-4 py-2 font-medium">${cat}</td>
+                                        <td class="px-4 py-2 text-center">${s.L?.toFixed(2) || '-'}</td>
+                                        <td class="px-4 py-2 text-center">${s.I || '-'}</td>
+                                        <td class="px-4 py-2 text-center">${s.IR?.toFixed(2) || '-'}</td>
+                                        <td class="px-4 py-2 text-center">${s.CEf ? (s.CEf * 100).toFixed(0) + '%' : '-'}</td>
+                                        <td class="px-4 py-2 text-center font-medium">${s.RR?.toFixed(2) || '-'}</td>
+                                        <td class="px-4 py-2 text-center">
+                                            <span class="px-2 py-1 rounded text-xs ${getRiskLevelBadge(s.riskLevel)}">${s.riskLevel || '-'}</span>
+                                        </td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-3">Question Responses</h4>
+                    <div class="max-h-64 overflow-y-auto space-y-2">
+                        ${a.answers?.map(ans => {
+                            const q = questions.find(x => x.id === ans.questionId);
+                            const ansLabel = ans.score === 5 ? 'Yes' : ans.score === 3 ? 'Partial' : 'No';
+                            return `
+                            <div class="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                                <span class="text-sm text-gray-700">${q?.text || 'Unknown question'}</span>
+                                <span class="px-3 py-1 rounded text-xs font-medium ${ans.score === 5 ? 'bg-green-100 text-green-800' : ans.score === 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}">${ansLabel}</span>
+                            </div>`;
+                        }).join('') || '<p class="text-gray-500">No responses recorded</p>'}
+                    </div>
+                </div>
+            </div>
+        `;
+        openModal('assessmentDetailModal');
+    };
+
+    const RiskRegisterPage = () => {
+        const risks = loadFromStorage('risks', []);
+        const vendors = loadFromStorage('vendors', []);
+        const users = loadFromStorage('users', []);
+
+        return `
+        <div class="p-8 fade-in">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Risk Register</h1>
+                    <p class="text-gray-500 mt-1">Track and manage identified risks</p>
+                </div>
+                <div class="flex gap-3">
+                    ${Button({ text: 'Export CSV', onClick: 'exportRiskRegisterCSV()', variant: 'secondary', icon: 'file-csv' })}
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+                <div class="flex flex-wrap gap-4">
+                    <select id="filterLevel" onchange="filterRisks()" class="px-4 py-2 border border-gray-200 rounded-lg">
+                        <option value="">All Levels</option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                    <select id="filterStatus" onchange="filterRisks()" class="px-4 py-2 border border-gray-200 rounded-lg">
+                        <option value="">All Statuses</option>
+                        <option value="Open">Open</option>
+                        <option value="Accepted">Accepted</option>
+                        <option value="Mitigated">Mitigated</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                    <select id="filterCategory" onchange="filterRisks()" class="px-4 py-2 border border-gray-200 rounded-lg">
+                        <option value="">All Categories</option>
+                        ${RISK_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full" id="riskTable">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Risk</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Vendor</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Category</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">IR</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">RR</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Level</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
+                                <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Manage</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100" id="riskTableBody">
+                            ${risks.map(risk => {
+                                const vendor = vendors.find(v => v.id === risk.vendorId);
+                                return `
+                                <tr class="hover:bg-gray-50 transition-colors risk-row" data-level="${risk.riskLevel}" data-status="${risk.status}" data-category="${risk.category}">
+                                    <td class="px-6 py-4">
+                                        <p class="font-medium text-gray-800">${risk.title}</p>
+                                        <p class="text-xs text-gray-500">ID: ${risk.id}</p>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-600">${vendor?.name || 'Unknown'}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">${risk.category}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-gray-600">${risk.inherentRisk?.toFixed(1) || '-'}</td>
+                                    <td class="px-6 py-4 text-center font-semibold text-gray-800">${risk.residualRisk?.toFixed(1) || '-'}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium ${getRiskLevelBadge(risk.riskLevel)}">${risk.riskLevel}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium ${risk.status === 'Open' ? 'bg-blue-100 text-blue-800' : risk.status === 'Closed' ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'}">${risk.status}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-600">${risk.recommendedAction || '-'}</td>
+                                    <td class="px-6 py-4 text-right">
+                                        ${hasPermission(['Admin', 'SecurityManager', 'RiskReviewer']) ? `
+                                        <button onclick="openRiskDecision(${risk.id})" class="text-blue-500 hover:text-blue-700 font-medium text-sm">
+                                            ${Icon('edit')} Decide
+                                        </button>
+                                        ` : '-'}
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ${risks.length === 0 ? `
+                <div class="p-12 text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        ${Icon('check-circle', 'text-green-500 text-2xl')}
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">No risks identified</h3>
+                    <p class="text-gray-500">Complete vendor assessments to populate the risk register</p>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        
+        ${Modal({
+            id: 'riskDecisionModal',
+            title: 'Risk Decision',
+            content: '<div id="riskDecisionContent"></div>'
+        })}`;
+    };
+
+    window.filterRisks = () => {
+        const level = document.getElementById('filterLevel').value;
+        const status = document.getElementById('filterStatus').value;
+        const category = document.getElementById('filterCategory').value;
+        document.querySelectorAll('.risk-row').forEach(row => {
+            const matchLevel = !level || row.dataset.level === level;
+            const matchStatus = !status || row.dataset.status === status;
+            const matchCategory = !category || row.dataset.category === category;
+            row.style.display = matchLevel && matchStatus && matchCategory ? '' : 'none';
+        });
+    };
+
+    window.openRiskDecision = (riskId) => {
+        const risks = loadFromStorage('risks', []);
+        const users = loadFromStorage('users', []);
+        const risk = risks.find(r => r.id === riskId);
+        
+        document.getElementById('riskDecisionContent').innerHTML = `
+            <form onsubmit="saveRiskDecision(event, ${riskId})">
+                <div class="space-y-4">
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <p class="font-medium text-gray-800">${risk.title}</p>
+                        <p class="text-sm text-gray-500">Category: ${risk.category} | RR: ${risk.residualRisk?.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Decision</label>
+                        <select id="riskDecision" required class="w-full px-4 py-3 border border-gray-200 rounded-xl">
+                            <option value="Accept" ${risk.recommendedAction === 'Accept' ? 'selected' : ''}>Accept</option>
+                            <option value="Mitigate" ${risk.recommendedAction === 'Mitigate' ? 'selected' : ''}>Mitigate</option>
+                            <option value="Transfer" ${risk.recommendedAction === 'Transfer' ? 'selected' : ''}>Transfer</option>
+                            <option value="Avoid" ${risk.recommendedAction === 'Avoid' ? 'selected' : ''}>Avoid</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="riskStatus" required class="w-full px-4 py-3 border border-gray-200 rounded-xl">
+                            <option value="Open" ${risk.status === 'Open' ? 'selected' : ''}>Open</option>
+                            <option value="Accepted" ${risk.status === 'Accepted' ? 'selected' : ''}>Accepted</option>
+                            <option value="Mitigated" ${risk.status === 'Mitigated' ? 'selected' : ''}>Mitigated</option>
+                            <option value="Closed" ${risk.status === 'Closed' ? 'selected' : ''}>Closed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Risk Owner</label>
+                        <select id="riskOwner" class="w-full px-4 py-3 border border-gray-200 rounded-xl">
+                            <option value="">Unassigned</option>
+                            ${users.map(u => `<option value="${u.id}" ${risk.riskOwner === u.id ? 'selected' : ''}>${u.fullName} (${u.role})</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Decision Memo</label>
+                        <textarea id="riskMemo" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl">${risk.decisionMemo || ''}</textarea>
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="closeModal('riskDecisionModal')" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="flex-1 btn-primary text-white px-4 py-3 rounded-xl">Save Decision</button>
+                    </div>
+                </div>
+            </form>
+        `;
+        openModal('riskDecisionModal');
+    };
+
+    window.saveRiskDecision = (e, riskId) => {
+        e.preventDefault();
+        const risks = loadFromStorage('risks', []);
+        const idx = risks.findIndex(r => r.id === riskId);
+        if (idx >= 0) {
+            const oldStatus = risks[idx].status;
+            risks[idx].recommendedAction = document.getElementById('riskDecision').value;
+            risks[idx].status = document.getElementById('riskStatus').value;
+            risks[idx].riskOwner = document.getElementById('riskOwner').value || null;
+            risks[idx].decisionMemo = document.getElementById('riskMemo').value;
+            risks[idx].updatedAt = new Date().toISOString();
+            risks[idx].approver = store.getState().currentUser?.id;
+            saveToStorage('risks', risks);
+            logAudit('UPDATE_RISK', { riskId, oldStatus, newStatus: risks[idx].status });
+            closeModal('riskDecisionModal');
+            Toast('Risk decision saved');
+            render();
+        }
+    };
+
+    window.exportRiskRegisterCSV = () => {
+        const risks = loadFromStorage('risks', []);
+        const vendors = loadFromStorage('vendors', []);
+        const headers = ['ID', 'Title', 'Vendor', 'Category', 'Inherent Risk', 'Residual Risk', 'Level', 'Status', 'Recommended Action', 'Created'];
+        const rows = risks.map(r => {
+            const vendor = vendors.find(v => v.id === r.vendorId);
+            return [r.id, r.title, vendor?.name || '', r.category, r.inherentRisk?.toFixed(2), r.residualRisk?.toFixed(2), r.riskLevel, r.status, r.recommendedAction, formatDate(r.createdAt)];
+        });
+        const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `risk-register-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        Toast('CSV exported successfully');
+    };
+
+    const ReportsPage = () => {
+        const vendors = loadFromStorage('vendors', []);
+        const assessments = loadFromStorage('assessments', []);
+        const risks = loadFromStorage('risks', []);
+        
+        const criticalCount = risks.filter(r => r.riskLevel === 'Critical').length;
+        const highCount = risks.filter(r => r.riskLevel === 'High').length;
+        const mediumCount = risks.filter(r => r.riskLevel === 'Medium').length;
+        const lowCount = risks.filter(r => r.riskLevel === 'Low').length;
+
+        return `
+        <div class="p-8 fade-in">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Reports & Analytics</h1>
+                <p class="text-gray-500 mt-1">Generate reports and export data</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                ${Card({
+                    title: 'Executive Summary (PDF)',
+                    icon: 'file-pdf',
+                    content: `
+                        <p class="text-gray-600 mb-4">High-level overview suitable for executive stakeholders - opens in new window for printing</p>
+                        ${Button({ text: 'Generate PDF Report', onClick: 'generateExecutivePDF()', icon: 'file-pdf', variant: 'primary' })}
+                    `
+                })}
+                ${Card({
+                    title: 'Full Assessment Report',
+                    icon: 'file-alt',
+                    content: `
+                        <p class="text-gray-600 mb-4">Detailed assessment with all calculations and evidence</p>
+                        ${Button({ text: 'Generate Report', onClick: 'generateFullAssessmentReport()', icon: 'download', variant: 'primary' })}
+                    `
+                })}
+                ${Card({
+                    title: 'Risk Register Export',
+                    icon: 'table',
+                    content: `
+                        <p class="text-gray-600 mb-4">Complete risk register with all details in CSV/Excel format</p>
+                        ${Button({ text: 'Export CSV', onClick: 'exportRiskRegisterCSV()', icon: 'file-csv', variant: 'primary' })}
+                    `
+                })}
+                ${Card({
+                    title: 'RACI Matrix',
+                    icon: 'sitemap',
+                    content: `
+                        <p class="text-gray-600 mb-4">Responsibility assignment matrix for risk management</p>
+                        ${Button({ text: 'Export RACI', onClick: 'exportRACIMatrix()', icon: 'download', variant: 'primary' })}
+                    `
+                })}
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                ${Card({
+                    title: 'Risk Distribution',
+                    icon: 'chart-pie',
+                    content: `
+                        <div class="flex items-center justify-center gap-8">
+                            <div class="relative w-48 h-48">
+                                <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
+                                    ${(() => {
+                                        const total = criticalCount + highCount + mediumCount + lowCount || 1;
+                                        const radius = 40;
+                                        const circumference = 2 * Math.PI * radius;
+                                        let offset = 0;
+                                        const segments = [
+                                            { count: criticalCount, color: '#dc2626' },
+                                            { count: highCount, color: '#ea580c' },
+                                            { count: mediumCount, color: '#eab308' },
+                                            { count: lowCount, color: '#22c55e' }
+                                        ];
+                                        return segments.map(seg => {
+                                            const percentage = seg.count / total;
+                                            const dashLength = percentage * circumference;
+                                            const result = `<circle cx="50" cy="50" r="${radius}" fill="none" stroke="${seg.color}" stroke-width="20" stroke-dasharray="${dashLength} ${circumference}" stroke-dashoffset="-${offset}" />`;
+                                            offset += dashLength;
+                                            return result;
+                                        }).join('');
+                                    })()}
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <p class="text-2xl font-bold">${risks.length}</p>
+                                        <p class="text-xs text-gray-500">Total</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-red-600"></div><span class="text-sm">Critical: ${criticalCount}</span></div>
+                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-orange-500"></div><span class="text-sm">High: ${highCount}</span></div>
+                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-yellow-500"></div><span class="text-sm">Medium: ${mediumCount}</span></div>
+                                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-green-500"></div><span class="text-sm">Low: ${lowCount}</span></div>
+                            </div>
+                        </div>
+                    `
+                })}
+                
+                ${Card({
+                    title: 'Assessment Statistics',
+                    icon: 'chart-bar',
+                    content: `
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="text-center p-4 bg-blue-50 rounded-xl">
+                                <p class="text-4xl font-bold text-blue-600">${vendors.length}</p>
+                                <p class="text-gray-600 text-sm">Total Vendors</p>
+                            </div>
+                            <div class="text-center p-4 bg-green-50 rounded-xl">
+                                <p class="text-4xl font-bold text-green-600">${assessments.filter(a => a.status === 'final').length}</p>
+                                <p class="text-gray-600 text-sm">Completed Assessments</p>
+                            </div>
+                            <div class="text-center p-4 bg-red-50 rounded-xl">
+                                <p class="text-4xl font-bold text-red-600">${criticalCount + highCount}</p>
+                                <p class="text-gray-600 text-sm">Critical/High Risks</p>
+                            </div>
+                            <div class="text-center p-4 bg-purple-50 rounded-xl">
+                                <p class="text-4xl font-bold text-purple-600">${risks.filter(r => r.status === 'Closed' || r.status === 'Mitigated').length}</p>
+                                <p class="text-gray-600 text-sm">Risks Addressed</p>
+                            </div>
+                        </div>
+                    `
+                })}
+            </div>
+            
+            ${Card({
+                title: 'Vendor Risk Summary',
+                icon: 'building',
+                content: `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">Vendor</th>
+                                    <th class="px-4 py-3 text-left">Type</th>
+                                    <th class="px-4 py-3 text-center">Assessments</th>
+                                    <th class="px-4 py-3 text-center">Latest Maturity</th>
+                                    <th class="px-4 py-3 text-center">Open Risks</th>
+                                    <th class="px-4 py-3 text-center">Overall Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                ${vendors.map(v => {
+                                    const vAssessments = assessments.filter(a => a.vendorId === v.id);
+                                    const lastAssessment = vAssessments.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+                                    const vRisks = risks.filter(r => r.vendorId === v.id && r.status === 'Open');
+                                    return `
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-3 font-medium">${v.name}</td>
+                                        <td class="px-4 py-3 text-gray-600">${v.type}</td>
+                                        <td class="px-4 py-3 text-center">${vAssessments.length}</td>
+                                        <td class="px-4 py-3 text-center">${lastAssessment?.maturityLevel || 'N/A'}</td>
+                                        <td class="px-4 py-3 text-center">${vRisks.length}</td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium ${getRiskLevelBadge(lastAssessment?.overallRiskLevel || 'Not Assessed')}">${lastAssessment?.overallRiskLevel || 'N/A'}</span>
+                                        </td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `
+            })}
+        </div>`;
+    };
+
+    window.generateExecutiveSummary = () => {
+        const vendors = loadFromStorage('vendors', []);
+        const risks = loadFromStorage('risks', []);
+        const assessments = loadFromStorage('assessments', []);
+        
+        const criticalRisks = risks.filter(r => r.riskLevel === 'Critical');
+        const highRisks = risks.filter(r => r.riskLevel === 'High');
+        
+        let report = `EXECUTIVE SUMMARY - VENDOR RISK ASSESSMENT\n`;
+        report += `Generated: ${formatDateTime(new Date())}\n`;
+        report += `${'='.repeat(50)}\n\n`;
+        report += `OVERVIEW\n`;
+        report += `- Total Vendors Under Management: ${vendors.length}\n`;
+        report += `- Completed Assessments: ${assessments.filter(a => a.status === 'final').length}\n`;
+        report += `- Total Identified Risks: ${risks.length}\n\n`;
+        report += `RISK SUMMARY\n`;
+        report += `- Critical Risks: ${criticalRisks.length}\n`;
+        report += `- High Risks: ${highRisks.length}\n`;
+        report += `- Medium Risks: ${risks.filter(r => r.riskLevel === 'Medium').length}\n`;
+        report += `- Low Risks: ${risks.filter(r => r.riskLevel === 'Low').length}\n\n`;
+        
+        if (criticalRisks.length > 0) {
+            report += `TOP CRITICAL RISKS REQUIRING IMMEDIATE ATTENTION\n`;
+            criticalRisks.slice(0, 5).forEach((r, i) => {
+                const vendor = vendors.find(v => v.id === r.vendorId);
+                report += `${i + 1}. ${r.title} (${vendor?.name || 'Unknown'}) - RR: ${r.residualRisk?.toFixed(2)}\n`;
+            });
+            report += `\n`;
+        }
+        
+        report += `RECOMMENDED ACTIONS\n`;
+        report += `- Review and approve decisions for ${risks.filter(r => r.status === 'Open').length} open risks\n`;
+        report += `- Schedule follow-up assessments for high-risk vendors\n`;
+        report += `- Implement mitigation controls for identified gaps\n`;
+
+        const blob = new Blob([report], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `executive-summary-${new Date().toISOString().split('T')[0]}.txt`;
+        a.click();
+        Toast('Executive summary generated');
+    };
+    
+    window.generateExecutivePDF = () => {
+        const vendors = loadFromStorage('vendors', []);
+        const risks = loadFromStorage('risks', []);
+        const assessments = loadFromStorage('assessments', []);
+        const user = store.getState().currentUser;
+        
+        const criticalRisks = risks.filter(r => r.riskLevel === 'Critical');
+        const highRisks = risks.filter(r => r.riskLevel === 'High');
+        const mediumRisks = risks.filter(r => r.riskLevel === 'Medium');
+        const lowRisks = risks.filter(r => r.riskLevel === 'Low');
+        
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Executive Summary - Vendor Risk Assessment</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+        h1 { color: #1e40af; border-bottom: 3px solid #1e40af; padding-bottom: 10px; }
+        h2 { color: #374151; margin-top: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .logo { font-size: 24px; font-weight: bold; color: #1e40af; }
+        .meta { text-align: right; color: #6b7280; font-size: 12px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 20px 0; }
+        .summary-card { padding: 20px; border-radius: 8px; text-align: center; }
+        .summary-card.critical { background: #fef2f2; border: 2px solid #dc2626; }
+        .summary-card.high { background: #fff7ed; border: 2px solid #ea580c; }
+        .summary-card.medium { background: #fefce8; border: 2px solid #eab308; }
+        .summary-card.low { background: #f0fdf4; border: 2px solid #22c55e; }
+        .summary-card .number { font-size: 36px; font-weight: bold; }
+        .summary-card.critical .number { color: #dc2626; }
+        .summary-card.high .number { color: #ea580c; }
+        .summary-card.medium .number { color: #eab308; }
+        .summary-card.low .number { color: #22c55e; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #f3f4f6; font-weight: 600; }
+        .risk-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .risk-critical { background: #fef2f2; color: #dc2626; }
+        .risk-high { background: #fff7ed; color: #ea580c; }
+        .alert { background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; }
+        .recommendation { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; }
+        .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 11px; }
+        @media print { body { margin: 20px; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🛡️ VendorRisk Pro</div>
+        <div class="meta">
+            <div>Executive Summary Report</div>
+            <div>Generated: ${formatDateTime(new Date())}</div>
+            <div>Prepared by: ${user?.fullName || 'System'}</div>
+        </div>
+    </div>
+    
+    <h1>Third-Party Vendor Risk Assessment</h1>
+    
+    <h2>Risk Overview</h2>
+    <div class="summary-grid">
+        <div class="summary-card critical">
+            <div class="number">${criticalRisks.length}</div>
+            <div>Critical Risks</div>
+        </div>
+        <div class="summary-card high">
+            <div class="number">${highRisks.length}</div>
+            <div>High Risks</div>
+        </div>
+        <div class="summary-card medium">
+            <div class="number">${mediumRisks.length}</div>
+            <div>Medium Risks</div>
+        </div>
+        <div class="summary-card low">
+            <div class="number">${lowRisks.length}</div>
+            <div>Low Risks</div>
+        </div>
+    </div>
+    
+    <h2>Key Metrics</h2>
+    <table>
+        <tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>Total Vendors Under Management</td><td><strong>${vendors.length}</strong></td></tr>
+        <tr><td>Completed Assessments</td><td><strong>${assessments.filter(a => a.status === 'final').length}</strong></td></tr>
+        <tr><td>Total Identified Risks</td><td><strong>${risks.length}</strong></td></tr>
+        <tr><td>Open Risks Requiring Action</td><td><strong>${risks.filter(r => r.status === 'Open').length}</strong></td></tr>
+        <tr><td>Risks Mitigated/Closed</td><td><strong>${risks.filter(r => r.status === 'Closed' || r.status === 'Mitigated').length}</strong></td></tr>
+    </table>
+    
+    ${criticalRisks.length > 0 ? `
+    <div class="alert">
+        <strong>⚠️ Immediate Attention Required</strong><br>
+        ${criticalRisks.length} critical risk(s) require immediate executive decision and action.
+    </div>
+    
+    <h2>Top Critical Risks</h2>
+    <table>
+        <tr><th>Risk</th><th>Vendor</th><th>Category</th><th>Residual Risk</th><th>Status</th></tr>
+        ${criticalRisks.slice(0, 5).map(r => {
+            const vendor = vendors.find(v => v.id === r.vendorId);
+            return `<tr>
+                <td>${r.title}</td>
+                <td>${vendor?.name || 'Unknown'}</td>
+                <td>${r.category}</td>
+                <td>${r.residualRisk?.toFixed(2)}</td>
+                <td><span class="risk-badge risk-critical">${r.status}</span></td>
+            </tr>`;
+        }).join('')}
+    </table>
+    ` : '<div class="recommendation"><strong>✅ Good Status</strong><br>No critical risks currently identified.</div>'}
+    
+    <h2>Recommendations</h2>
+    <div class="recommendation">
+        <ul>
+            <li>Review and approve decisions for <strong>${risks.filter(r => r.status === 'Open').length}</strong> open risks</li>
+            <li>Schedule follow-up assessments for high-risk vendors</li>
+            <li>Implement mitigation controls for identified gaps</li>
+            <li>Ensure all critical vendors have completed assessments</li>
+        </ul>
+    </div>
+    
+    <div class="footer">
+        <p>This report was generated by VendorRisk Pro - Third-Party Vendor Risk Assessment Platform</p>
+        <p>Confidential - For Internal Use Only</p>
+    </div>
+</body>
+</html>`;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(html);
+        printWindow.document.close();
+        Toast('PDF report opened - use Print > Save as PDF');
+    };
+    
+    window.generateFullAssessmentReport = () => {
+        const vendors = loadFromStorage('vendors', []);
+        const assessments = loadFromStorage('assessments', []);
+        const questions = loadFromStorage('questions', QUESTIONS);
+        const risks = loadFromStorage('risks', []);
+        const user = store.getState().currentUser;
+        
+        let html = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Full Assessment Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; color: #333; font-size: 12px; }
+        h1 { color: #1e40af; }
+        h2 { color: #374151; margin-top: 30px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+        h3 { color: #4b5563; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11px; }
+        th, td { padding: 8px; text-align: left; border: 1px solid #e5e7eb; }
+        th { background: #f3f4f6; }
+        .page-break { page-break-before: always; }
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+        .badge-critical { background: #fef2f2; color: #dc2626; }
+        .badge-high { background: #fff7ed; color: #ea580c; }
+        .badge-medium { background: #fefce8; color: #ca8a04; }
+        .badge-low { background: #f0fdf4; color: #16a34a; }
+        .calculation { background: #f9fafb; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Full Vendor Risk Assessment Report</h1>
+    <p>Generated: ${formatDateTime(new Date())} | Prepared by: ${user?.fullName || 'System'}</p>
+    <hr>`;
+        
+        assessments.filter(a => a.status === 'final').forEach((assessment, idx) => {
+            const vendor = vendors.find(v => v.id === assessment.vendorId);
+            const assessmentRisks = risks.filter(r => r.assessmentId === assessment.id);
+            
+            html += `
+    ${idx > 0 ? '<div class="page-break"></div>' : ''}
+    <h2>Assessment: ${vendor?.name || 'Unknown Vendor'}</h2>
+    <p><strong>Date:</strong> ${formatDateTime(assessment.createdAt)} | <strong>Maturity:</strong> ${assessment.maturityLevel} | <strong>Overall Risk:</strong> ${assessment.overallRiskLevel}</p>
+    
+    <h3>Risk Scores by Category</h3>
+    <table>
+        <tr><th>Category</th><th>L</th><th>I</th><th>IR</th><th>CEf</th><th>RR</th><th>Level</th></tr>
+        ${RISK_CATEGORIES.map(cat => {
+            const s = assessment.categoryScores?.[cat] || {};
+            return `<tr>
+                <td>${cat}</td>
+                <td>${s.L?.toFixed(2) || '-'}</td>
+                <td>${s.I || '-'}</td>
+                <td>${s.IR?.toFixed(2) || '-'}</td>
+                <td>${s.CEf ? (s.CEf * 100).toFixed(0) + '%' : '-'}</td>
+                <td>${s.RR?.toFixed(2) || '-'}</td>
+                <td><span class="badge badge-${(s.riskLevel || 'low').toLowerCase()}">${s.riskLevel || '-'}</span></td>
+            </tr>`;
+        }).join('')}
+    </table>
+    
+    <h3>Question Responses</h3>
+    <table>
+        <tr><th>Question</th><th>Category</th><th>Answer</th><th>Score</th></tr>
+        ${assessment.answers?.map(ans => {
+            const q = questions.find(x => x.id === ans.questionId);
+            const ansLabel = ans.score === 5 ? 'Yes' : ans.score === 3 ? 'Partial' : 'No';
+            return `<tr>
+                <td>${q?.text || 'Unknown'}</td>
+                <td>${q?.category || '-'}</td>
+                <td>${ansLabel}</td>
+                <td>${ans.score}</td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="4">No responses</td></tr>'}
+    </table>
+    
+    <div class="calculation">
+        <strong>Calculation Methodology:</strong><br>
+        L (Likelihood) = Average question scores per category (1-5)<br>
+        IR (Inherent Risk) = L × I (1-25 scale)<br>
+        CEf (Control Effectiveness) = (avg_score - 1) / 4 → 0.0 to 1.0<br>
+        RR (Residual Risk) = IR × (1 - CEf)<br>
+        Thresholds: Low ≤4, Medium 4-10, High 10-17, Critical >17
+    </div>`;
+        });
+        
+        html += `
+    <div class="page-break"></div>
+    <h2>Complete Risk Register</h2>
+    <table>
+        <tr><th>ID</th><th>Title</th><th>Vendor</th><th>Category</th><th>IR</th><th>RR</th><th>Level</th><th>Status</th><th>Decision</th></tr>
+        ${risks.map(r => {
+            const vendor = vendors.find(v => v.id === r.vendorId);
+            return `<tr>
+                <td>${r.id}</td>
+                <td>${r.title}</td>
+                <td>${vendor?.name || '-'}</td>
+                <td>${r.category}</td>
+                <td>${r.inherentRisk?.toFixed(2) || '-'}</td>
+                <td>${r.residualRisk?.toFixed(2) || '-'}</td>
+                <td><span class="badge badge-${(r.riskLevel || 'low').toLowerCase()}">${r.riskLevel}</span></td>
+                <td>${r.status}</td>
+                <td>${r.recommendedAction || '-'}</td>
+            </tr>`;
+        }).join('')}
+    </table>
+</body>
+</html>`;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(html);
+        printWindow.document.close();
+        Toast('Full report opened - use Print > Save as PDF');
+    };
+
+    window.exportRACIMatrix = () => {
+        const risks = loadFromStorage('risks', []);
+        const users = loadFromStorage('users', []);
+        const vendors = loadFromStorage('vendors', []);
+        
+        const headers = ['Risk ID', 'Risk Title', 'Vendor', 'Responsible (Owner)', 'Accountable (Approver)', 'Consulted', 'Informed'];
+        const rows = risks.map(r => {
+            const vendor = vendors.find(v => v.id === r.vendorId);
+            const owner = users.find(u => u.id === r.riskOwner);
+            const approver = users.find(u => u.id === r.approver);
+            return [r.id, r.title, vendor?.name || '', owner?.fullName || 'Unassigned', approver?.fullName || 'Unassigned', 'Security Team', 'Executive Team'];
+        });
+        
+        const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `raci-matrix-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        Toast('RACI matrix exported');
+    };
+
+    const MappingsPage = () => {
+        const questions = loadFromStorage('questions', QUESTIONS);
+
+        return `
+        <div class="p-8 fade-in">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Standards Mapping</h1>
+                <p class="text-gray-500 mt-1">ISO 27001 and NIST CSF control mappings</p>
+            </div>
+
+            ${Card({
+                title: 'Question to Standards Mapping',
+                icon: 'sitemap',
+                content: `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Question</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Category</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600">ISO 27001 Controls</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600">NIST CSF Functions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                ${questions.map(q => `
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3 text-gray-800">${q.text}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">${q.category}</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        ${q.iso_controls.map(c => `<span class="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs mr-1 mb-1">${c}</span>`).join('')}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        ${q.nist_functions.map(c => `<span class="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs mr-1 mb-1">${c}</span>`).join('')}
+                                    </td>
+                                </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `
+            })}
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                ${Card({
+                    title: 'ISO 27001 Reference',
+                    icon: 'certificate',
+                    content: `
+                        <div class="space-y-2 text-sm">
+                            <p><strong>A.7</strong> - Human Resource Security</p>
+                            <p><strong>A.8</strong> - Asset Management</p>
+                            <p><strong>A.9</strong> - Access Control</p>
+                            <p><strong>A.10</strong> - Cryptography</p>
+                            <p><strong>A.12</strong> - Operations Security</p>
+                            <p><strong>A.15</strong> - Supplier Relationships</p>
+                            <p><strong>A.16</strong> - Incident Management</p>
+                            <p><strong>A.17</strong> - Business Continuity</p>
+                            <p><strong>A.18</strong> - Compliance</p>
+                        </div>
+                    `
+                })}
+                ${Card({
+                    title: 'NIST CSF Reference',
+                    icon: 'shield-alt',
+                    content: `
+                        <div class="space-y-2 text-sm">
+                            <p><strong>ID</strong> - Identify (Asset Management, Governance)</p>
+                            <p><strong>PR</strong> - Protect (Access Control, Data Security)</p>
+                            <p><strong>DE</strong> - Detect (Monitoring, Detection Processes)</p>
+                            <p><strong>RS</strong> - Respond (Response Planning, Communications)</p>
+                            <p><strong>RC</strong> - Recover (Recovery Planning, Improvements)</p>
+                        </div>
+                    `
+                })}
+            </div>
+        </div>`;
+    };
+
+    const AuditLogsPage = () => {
+        const logs = loadFromStorage('auditLogs', []);
+
+        return `
+        <div class="p-8 fade-in">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Audit Logs</h1>
+                <p class="text-gray-500 mt-1">System activity and change history</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto max-h-[600px]">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Timestamp</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">User</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            ${logs.map(log => `
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm text-gray-600">${formatDateTime(log.createdAt)}</td>
+                                <td class="px-6 py-4 text-sm font-medium text-gray-800">${log.userName || 'System'}</td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">${log.action}</span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-600">${JSON.stringify(log.details)}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ${logs.length === 0 ? '<div class="p-12 text-center text-gray-500">No audit logs available</div>' : ''}
+            </div>
+        </div>`;
+    };
+
+    const AdminPage = () => {
+        const users = loadFromStorage('users', []);
+
+        return `
+        <div class="p-8 fade-in">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Administration</h1>
+                <p class="text-gray-500 mt-1">Manage users and system settings</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                ${Card({
+                    title: 'User Management',
+                    icon: 'users',
+                    actions: Button({ text: 'Add User', onClick: "openModal('newUserModal')", icon: 'plus', size: 'sm' }),
+                    content: `
+                        <div class="space-y-3">
+                            ${users.map(u => `
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                        ${u.fullName.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-800">${u.fullName}</p>
+                                        <p class="text-sm text-gray-500">${u.email}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">${u.role}</span>
+                                    ${u.id !== store.getState().currentUser?.id ? `
+                                    <button onclick="deleteUser(${u.id})" class="text-red-500 hover:text-red-700">
+                                        ${Icon('trash')}
+                                    </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            `).join('')}
+                        </div>
+                    `
+                })}
+
+                ${Card({
+                    title: 'System Settings',
+                    icon: 'cog',
+                    content: `
+                        <div class="space-y-4">
+                            <div class="p-4 bg-gray-50 rounded-xl">
+                                <h4 class="font-medium text-gray-800 mb-2">Risk Thresholds</h4>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>Low: RR ≤ 4</div>
+                                    <div>Medium: 4 < RR ≤ 10</div>
+                                    <div>High: 10 < RR ≤ 17</div>
+                                    <div>Critical: RR > 17</div>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-xl">
+                                <h4 class="font-medium text-gray-800 mb-2">Data Management</h4>
+                                <div class="flex gap-3">
+                                    ${Button({ text: 'Export All Data', onClick: 'exportAllData()', variant: 'secondary', size: 'sm', icon: 'download' })}
+                                    ${Button({ text: 'Reset Demo Data', onClick: 'resetDemoData()', variant: 'danger', size: 'sm', icon: 'redo' })}
+                                </div>
+                            </div>
+                        </div>
+                    `
+                })}
+            </div>
+        </div>
+        
+        ${Modal({
+            id: 'newUserModal',
+            title: 'Add New User',
+            content: `
+                <form onsubmit="handleAddUser(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                            <input type="text" id="newUserName" required class="w-full px-4 py-3 border border-gray-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" id="newUserEmail" required class="w-full px-4 py-3 border border-gray-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                            <input type="password" id="newUserPassword" required class="w-full px-4 py-3 border border-gray-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                            <select id="newUserRole" required class="w-full px-4 py-3 border border-gray-200 rounded-xl">
+                                ${Object.values(ROLES).map(r => `<option value="${r}">${r}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="flex gap-3 pt-4">
+                            <button type="button" onclick="closeModal('newUserModal')" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50">Cancel</button>
+                            <button type="submit" class="flex-1 btn-primary text-white px-4 py-3 rounded-xl">Add User</button>
+                        </div>
+                    </div>
+                </form>
+            `
+        })}`;
+    };
+
+    window.handleAddUser = (e) => {
+        e.preventDefault();
+        const users = loadFromStorage('users', []);
+        const newUser = {
+            id: Date.now(),
+            fullName: document.getElementById('newUserName').value,
+            email: document.getElementById('newUserEmail').value,
+            password: document.getElementById('newUserPassword').value,
+            role: document.getElementById('newUserRole').value,
+            createdAt: new Date().toISOString()
+        };
+        users.push(newUser);
+        saveToStorage('users', users);
+        logAudit('CREATE_USER', { userId: newUser.id, email: newUser.email, role: newUser.role });
+        closeModal('newUserModal');
+        Toast('User added successfully');
+        render();
+    };
+
+    window.deleteUser = (userId) => {
+        if (confirm('Are you sure you want to delete this user?')) {
+            let users = loadFromStorage('users', []);
+            users = users.filter(u => u.id !== userId);
+            saveToStorage('users', users);
+            logAudit('DELETE_USER', { userId });
+            Toast('User deleted');
+            render();
+        }
+    };
+
+    window.exportAllData = () => {
+        const data = {
+            users: loadFromStorage('users', []),
+            vendors: loadFromStorage('vendors', []),
+            assessments: loadFromStorage('assessments', []),
+            risks: loadFromStorage('risks', []),
+            auditLogs: loadFromStorage('auditLogs', []),
+            exportedAt: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `vendorrisk-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        Toast('Data exported successfully');
+    };
+
+    window.resetDemoData = () => {
+        if (confirm('This will reset all data to demo defaults. Are you sure?')) {
+            localStorage.clear();
+            initializeData();
+            store.setState({ currentUser: null, currentPage: 'login' });
+            Toast('Demo data reset');
+            render();
+        }
+    };
+
+    // ==================== MAIN RENDER ====================
+    const render = () => {
+        const state = store.getState();
+        const app = document.getElementById('app');
+
+        if (!state.currentUser) {
+            app.innerHTML = LoginPage();
+            return;
+        }
+
+        const pages = {
+            'dashboard': DashboardPage,
+            'vendors': VendorsPage,
+            'assessments': AssessmentsPage,
+            'assessment-wizard': AssessmentWizardPage,
+            'risk-register': RiskRegisterPage,
+            'reports': ReportsPage,
+            'mappings': MappingsPage,
+            'audit-logs': AuditLogsPage,
+            'admin': AdminPage
+        };
+
+        const PageComponent = pages[state.currentPage] || DashboardPage;
+
+        app.innerHTML = `
+            <div class="flex min-h-screen">
+                ${Sidebar()}
+                <main class="flex-1 overflow-auto bg-gray-50">
+                    ${PageComponent()}
+                </main>
+            </div>
+        `;
+    };
+
+    // Initial render
+    render();
+    store.subscribe(render);
+    </script>
+</body>
+</html>

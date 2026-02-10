@@ -1,0 +1,2084 @@
+           
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Third-Party Vendor Risk Assessment Framework</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0f172a;
+            --secondary: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.7;
+            color: #1e293b;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.3), transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(72, 219, 251, 0.3), transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 25px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .header-left {
+            flex: 1;
+        }
+
+        .header-title {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-subtitle {
+            color: #64748b;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .header-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            white-space: nowrap;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 25px 0;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-pills {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            list-style: none;
+        }
+
+        .nav-pills button {
+            padding: 14px 20px;
+            border: 2px solid transparent;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            color: var(--primary);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-pills button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: left 0.3s ease;
+            z-index: 0;
+        }
+
+        .nav-pills button span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-pills button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+
+        .nav-pills button:hover::before {
+            left: 0;
+        }
+
+        .nav-pills button:hover span {
+            color: white;
+        }
+
+        .nav-pills button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-pills button.active::before {
+            left: 0;
+        }
+
+        .content-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+            background-size: 200% 100%;
+            animation: gradientMove 3s ease infinite;
+        }
+
+        @keyframes gradientMove {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid;
+            border-image: linear-gradient(90deg, #667eea, #764ba2) 1;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            color: var(--secondary);
+            font-size: 1.7rem;
+            margin: 40px 0 20px 0;
+            padding-left: 20px;
+            border-left: 5px solid #667eea;
+            font-weight: 700;
+            position: relative;
+        }
+
+        h2::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 0;
+            height: 100%;
+            width: 5px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        }
+
+        h3 {
+            color: var(--primary);
+            font-size: 1.3rem;
+            margin: 25px 0 15px 0;
+            font-weight: 700;
+        }
+
+        h4 {
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 18px;
+            text-align: justify;
+            color: #475569;
+            font-size: 1.02rem;
+        }
+
+        ul {
+            margin: 20px 0 20px 35px;
+        }
+
+        li {
+            margin-bottom: 12px;
+            color: #475569;
+            position: relative;
+            padding-left: 10px;
+        }
+
+        li::before {
+            content: '▸';
+            position: absolute;
+            left: -20px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 25px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px 18px;
+            border-bottom: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-low {
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            color: #065f46;
+        }
+
+        .badge-medium {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #92400e;
+        }
+
+        .badge-high {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: #991b1b;
+        }
+
+        .info-box, .success-box, .warning-box {
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 12px;
+            border-left: 5px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+            border-left-color: #3b82f6;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left-color: #10b981;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left-color: #f59e0b;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1);
+        }
+
+        .info-box::before, .success-box::before, .warning-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            opacity: 0.1;
+            border-radius: 50%;
+        }
+
+        .info-box::before {
+            background: #3b82f6;
+        }
+
+        .success-box::before {
+            background: #10b981;
+        }
+
+        .warning-box::before {
+            background: #f59e0b;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+
+        footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            text-align: center;
+            border-radius: 16px;
+            margin-top: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        footer p {
+            margin: 8px 0;
+            text-align: center;
+        }
+
+        .footer-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .header-title {
+                font-size: 1.5rem;
+            }
+
+            .nav-pills {
+                grid-template-columns: 1fr;
+            }
+
+            .content-card {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 12px;
+            }
+        }
+
+        .progress-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            z-index: 9999;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .section-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            font-weight: 700;
+            margin-right: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-indicator" id="progressBar"></div>
+
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-title">Enterprise Third-Party Vendor Risk Assessment Framework</div>
+                <div class="header-subtitle">Governance, Risk & Compliance | Industry-Grade Framework</div>
+            </div>
+            <div class="header-badge">GRC Framework v1.0</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav>
+            <ul class="nav-pills">
+                <li><button onclick="showSection(0)" class="active"><span>Executive Overview</span></button></li>
+                <li><button onclick="showSection(1)"><span>Scope & Applicability</span></button></li>
+                <li><button onclick="showSection(2)"><span>Governance & Ownership</span></button></li>
+                <li><button onclick="showSection(3)"><span>Vendor Lifecycle</span></button></li>
+                <li><button onclick="showSection(4)"><span>Risk Methodology</span></button></li>
+                <li><button onclick="showSection(5)"><span>Risk Classification</span></button></li>
+                <li><button onclick="showSection(6)"><span>Risk Register</span></button></li>
+                <li><button onclick="showSection(7)"><span>Maturity Model</span></button></li>
+                <li><button onclick="showSection(8)"><span>Standards Alignment</span></button></li>
+                <li><button onclick="showSection(9)"><span>Management Reporting</span></button></li>
+                <li><button onclick="showSection(10)"><span>Conclusion</span></button></li>
+            </ul>
+        </nav>
+
+        <div class="content-card">
+            <!-- Section 0: Executive Overview -->
+            <div class="section active" id="section-0">
+                <h1><span class="section-number">1</span>Executive Overview</h1>
+
+                <h2>1.1 Background and Business Context</h2>
+                <p>Modern organizations rely heavily on third-party vendors to deliver critical business capabilities such as cloud infrastructure, payment processing, and enterprise collaboration. While these vendors enable scalability, speed, and cost efficiency, they also introduce material risks that are often outside the direct control of the organization.</p>
+                
+                <p>Third-party vendor risks are no longer limited to technical security failures. They directly impact:</p>
+                <ul>
+                    <li>Confidentiality of customer and business data</li>
+                    <li>Regulatory and compliance obligations</li>
+                    <li>Operational continuity and service availability</li>
+                    <li>Brand reputation and customer trust</li>
+                </ul>
+
+                <div class="warning-box">
+                    <strong>Industry Context:</strong> Recent industry incidents demonstrate that vendor-related failures can result in data breaches, service outages, regulatory penalties, and long-term reputational damage. As a result, vendor risk has become a board-level concern rather than a purely technical issue.
+                </div>
+
+                <h2>1.2 Business Impact of Third-Party Vendor Risk</h2>
+                <p>Unmanaged or poorly governed vendor risk can have significant business consequences, including:</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>💰 Financial Impact</h4>
+                        <p>Regulatory fines, incident response costs, legal exposure, and revenue loss due to service disruption.</p>
+                    </div>
+                    <div class="card">
+                        <h4>⚙️ Operational Impact</h4>
+                        <p>Dependency on vendors for critical services increases the likelihood of cascading failures if vendors lack resilience.</p>
+                    </div>
+                    <div class="card">
+                        <h4>📋 Compliance Impact</h4>
+                        <p>Failure of vendors to meet security or privacy requirements can place the organization in direct violation of regulatory standards.</p>
+                    </div>
+                    <div class="card">
+                        <h4>🎯 Strategic Impact</h4>
+                        <p>Vendor incidents can delay business initiatives, product launches, and partnerships.</p>
+                    </div>
+                </div>
+
+                <p>Because vendors often operate outside the organization's direct control, these risks require a structured governance model rather than ad-hoc assessments.</p>
+
+                <h2>1.3 Purpose of the Vendor Risk Assessment Framework</h2>
+                <p>The purpose of this Enterprise Third-Party Vendor Risk Assessment Framework is to provide a consistent, repeatable, and risk-based approach for evaluating and managing risks introduced by third-party vendors.</p>
+
+                <p>This framework enables the organization to:</p>
+                <ul>
+                    <li>Identify and assess vendor risks in a standardized manner</li>
+                    <li>Compare vendors using objective risk criteria</li>
+                    <li>Support informed business decisions regarding vendor onboarding, continuation, or termination</li>
+                    <li>Establish accountability for vendor-related risks across business and security functions</li>
+                    <li>Demonstrate due diligence to auditors, regulators, and senior management</li>
+                </ul>
+
+                <div class="info-box">
+                    <strong>Framework Philosophy:</strong> The framework is designed to support decision-making, not just documentation. It focuses on material risks that affect business outcomes rather than technical control checklists.
+                </div>
+
+                <h2>1.4 Framework Enablement and Value</h2>
+                <p>This framework enables effective vendor risk management by integrating governance, risk assessment, and executive oversight into a single operating model.</p>
+
+                <p><strong>Key enablement outcomes include:</strong></p>
+                <ul>
+                    <li><strong>Risk visibility:</strong> Clear understanding of which vendors pose the highest risk and why</li>
+                    <li><strong>Decision clarity:</strong> Defined criteria for accepting, mitigating, or rejecting vendor risks</li>
+                    <li><strong>Ownership and accountability:</strong> Clear assignment of risk ownership and escalation paths</li>
+                    <li><strong>Audit readiness:</strong> Documented processes and evidence supporting vendor risk decisions</li>
+                    <li><strong>Scalability:</strong> Ability to assess new vendors consistently as the organization grows</li>
+                </ul>
+
+                <p>Rather than preventing vendor usage, the framework enables the business to engage vendors with a clear understanding of risk and appropriate controls.</p>
+
+                <h2>1.5 Key Stakeholders and Governance Bodies</h2>
+                <p>Effective vendor risk management requires collaboration between business, security, and governance functions. This framework is designed to support the following key stakeholders:</p>
+
+                <table>
+                    <tr>
+                        <th>Stakeholder</th>
+                        <th>Role in Framework</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Chief Information Security Officer (CISO)</strong></td>
+                        <td>Provides oversight of vendor cybersecurity risk, ensures alignment with the organization's security strategy, reviews high-risk vendor assessments and control gaps</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Risk Committee</strong></td>
+                        <td>Provides independent oversight of material vendor risks, approves risk acceptance decisions above defined thresholds, ensures vendor risks align with the organization's risk appetite</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Business Owners</strong></td>
+                        <td>Own the vendor relationship and business dependency, participate in risk assessment and remediation planning, accept residual risk where appropriate</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Legal and Compliance</strong></td>
+                        <td>Assess regulatory, contractual, and privacy obligations, ensure vendor agreements include appropriate risk controls</td>
+                    </tr>
+                </table>
+
+                <h2>1.6 Executive Summary Statement</h2>
+                <div class="success-box">
+                    <p><strong>Framework Value Proposition:</strong></p>
+                    <p>This framework establishes a formal, enterprise-level approach to managing third-party vendor risk. By aligning vendor risk assessment with business impact, governance, and executive oversight, the organization strengthens its ability to make informed, defensible decisions while supporting secure and compliant business growth.</p>
+                </div>
+            </div>
+
+            <!-- Section 1: Scope & Applicability -->
+            <div class="section" id="section-1">
+                <h1><span class="section-number">2</span>Scope & Applicability</h1>
+
+                <h2>2.1 Purpose of Scope Definition</h2>
+                <p>The purpose of this section is to clearly define where the Third-Party Vendor Risk Assessment Framework applies and where it does not. Establishing a well-defined scope ensures that vendor risk assessments remain consistent, relevant, and focused on material business risks.</p>
+                
+                <p>This framework is designed to prioritize vendors that pose meaningful cybersecurity, compliance, or operational risk to the organization, rather than attempting to assess all vendors equally.</p>
+
+                <h2>2.2 In-Scope Vendor Types</h2>
+                <p>This framework applies to third-party vendors that meet one or more of the following criteria:</p>
+                <ul>
+                    <li>Store, process, or transmit organizational data</li>
+                    <li>Have logical or physical access to internal systems or networks</li>
+                    <li>Support business-critical or customer-facing services</li>
+                    <li>Provide infrastructure or platforms on which key business operations depend</li>
+                </ul>
+
+                <h3>Primary In-Scope Vendor Categories</h3>
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>☁️ Cloud Service Providers</h4>
+                        <p>Vendors providing infrastructure, platforms, or software services that host or process organizational data.</p>
+                    </div>
+                    <div class="card">
+                        <h4>💳 Payment Gateways and Financial Service Providers</h4>
+                        <p>Vendors involved in payment processing, financial transactions, or handling of sensitive financial data.</p>
+                    </div>
+                    <div class="card">
+                        <h4>📧 Email, Collaboration, and Productivity Platforms</h4>
+                        <p>Vendors enabling communication, document storage, and collaboration across the organization.</p>
+                    </div>
+                </div>
+
+                <p>These categories represent vendors with the highest potential business and security impact and therefore require formal risk assessment.</p>
+
+                <h2>2.3 In-Scope Risk Domains</h2>
+                <p>The framework evaluates vendor risk across six fixed risk domains. These domains represent the minimum set of risk areas required to support informed vendor decisions:</p>
+
+                <table>
+                    <tr>
+                        <th>Risk Domain</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td><strong>🔒 Data Protection</strong></td>
+                        <td>Safeguards for data confidentiality, integrity, and encryption</td>
+                    </tr>
+                    <tr>
+                        <td><strong>🔑 Identity and Access Management</strong></td>
+                        <td>Control of user access, authentication, and authorization</td>
+                    </tr>
+                    <tr>
+                        <td><strong>⚖️ Compliance and Privacy</strong></td>
+                        <td>Alignment with regulatory, contractual, and privacy requirements</td>
+                    </tr>
+                    <tr>
+                        <td><strong>♻️ Business Continuity</strong></td>
+                        <td>Resilience, availability, and disaster recovery capabilities</td>
+                    </tr>
+                    <tr>
+                        <td><strong>🚨 Incident Response</strong></td>
+                        <td>Detection, response, and communication during security incidents</td>
+                    </tr>
+                    <tr>
+                        <td><strong>🏛️ Vendor Governance</strong></td>
+                        <td>Policies, oversight, and accountability within the vendor organization</td>
+                    </tr>
+                </table>
+
+                <div class="info-box">
+                    <strong>Domain Consistency:</strong> These domains are intentionally fixed to ensure consistency and comparability across vendor assessments.
+                </div>
+
+                <h2>2.4 Applicability Across the Vendor Lifecycle</h2>
+                <p>This framework applies at multiple stages of the vendor lifecycle, including:</p>
+                <ul>
+                    <li><strong>Pre-onboarding:</strong> Risk assessment prior to contract execution</li>
+                    <li><strong>Ongoing operations:</strong> Periodic reassessment of active vendors</li>
+                    <li><strong>Change events:</strong> Significant changes in vendor services, scope, or risk profile</li>
+                    <li><strong>Contract renewal or termination:</strong> Re-evaluation of vendor risk prior to renewal decisions</li>
+                </ul>
+
+                <p>Risk assessment frequency and depth may vary based on vendor criticality and risk level.</p>
+
+                <h2>2.5 Out-of-Scope Exclusions</h2>
+                <div class="warning-box">
+                    <p><strong>The following vendor types and scenarios are explicitly excluded from this framework unless otherwise approved by the Risk Committee:</strong></p>
+                    <ul>
+                        <li>Vendors with no access to organizational systems or data</li>
+                        <li>Low-risk suppliers providing non-digital or commoditized services</li>
+                        <li>Individual contractors operating under direct organizational supervision</li>
+                        <li>One-time vendors with no ongoing service or data exposure</li>
+                    </ul>
+                    <p>Exclusions are documented to prevent unnecessary assessment effort and to maintain focus on material risk.</p>
+                </div>
+
+                <h2>2.6 Assumptions and Constraints</h2>
+                <p>The framework operates under the following assumptions:</p>
+                <ul>
+                    <li>Vendor-provided information is subject to validation where feasible</li>
+                    <li>Risk assessments are based on available evidence at the time of review</li>
+                    <li>Not all vendor risks can be eliminated; residual risk is expected</li>
+                    <li>Business needs may require risk acceptance with appropriate approvals</li>
+                </ul>
+
+                <p>These assumptions support pragmatic, risk-based decision-making rather than absolute risk elimination.</p>
+
+                <h2>2.7 Scope Governance</h2>
+                <p>Any exceptions to the defined scope must be formally reviewed and approved by the Risk Committee. Scope changes driven by regulatory requirements, business expansion, or emerging threats will be incorporated through periodic framework review.</p>
+            </div>
+
+            <!-- Remaining sections continue here with same enhanced styling... -->
+            <!-- For brevity, I'll add a few more key sections -->
+
+            <!-- Section 2: Governance & Ownership -->
+            <div class="section" id="section-2">
+                <h1><span class="section-number">3</span>Governance & Ownership</h1>
+
+                <h2>3.1 Governance Objective</h2>
+                <p>The objective of the governance and ownership model is to ensure that third-party vendor risks are clearly owned, appropriately reviewed, and formally decided at the correct level of the organization.</p>
+
+                <div class="info-box">
+                    <strong>Core Principle:</strong> This framework establishes accountability for vendor risk decisions while ensuring that business, security, and compliance stakeholders are actively involved. No vendor risk is accepted by default; all risk acceptance must be deliberate, documented, and approved.
+                </div>
+
+                <h2>3.2 Roles and Responsibilities</h2>
+                <p>Vendor risk management is a shared responsibility across multiple functions. The following roles are defined to ensure clear accountability:</p>
+
+                <table>
+                    <tr>
+                        <th>Role</th>
+                        <th>Key Responsibilities</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Business Owner</strong></td>
+                        <td>
+                            Owns the relationship with the vendor; Understands the business dependency and criticality of the vendor; Participates in risk remediation planning; Accepts residual risk where authorized
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Risk Owner</strong></td>
+                        <td>
+                            Accountable for managing identified vendor risks; Ensures risks are tracked, reviewed, and updated; Coordinates mitigation actions across teams
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Information Security</strong></td>
+                        <td>
+                            Conducts vendor risk assessments; Reviews security controls and evidence; Advises on risk severity and control gaps
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Legal and Compliance</strong></td>
+                        <td>
+                            Reviews regulatory, contractual, and privacy requirements; Ensures vendor agreements include appropriate risk clauses; Advises on compliance-related risk exposure
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Risk Committee</strong></td>
+                        <td>
+                            Provides oversight of material and high-risk vendors; Reviews and approves risk acceptance decisions; Resolves escalated vendor risk issues
+                        </td>
+                    </tr>
+                </table>
+
+                <h2>3.3 Roles & Responsibilities (R&R) Matrix</h2>
+                <p>The table below summarizes accountability across key vendor risk activities:</p>
+
+                <table>
+                    <tr>
+                        <th>Activity</th>
+                        <th>Business Owner</th>
+                        <th>Risk Owner</th>
+                        <th>InfoSec</th>
+                        <th>Legal & Compliance</th>
+                        <th>Risk Committee</th>
+                    </tr>
+                    <tr>
+                        <td>Vendor Onboarding</td>
+                        <td><span class="badge badge-high">A</span></td>
+                        <td><span class="badge badge-medium">R</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-low">I</span></td>
+                    </tr>
+                    <tr>
+                        <td>Risk Assessment</td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-medium">R</span></td>
+                        <td><span class="badge badge-high">A</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-low">I</span></td>
+                    </tr>
+                    <tr>
+                        <td>Risk Mitigation</td>
+                        <td><span class="badge badge-high">A</span></td>
+                        <td><span class="badge badge-medium">R</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-low">I</span></td>
+                    </tr>
+                    <tr>
+                        <td>Risk Acceptance</td>
+                        <td><span class="badge badge-high">A</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-high">A</span></td>
+                    </tr>
+                    <tr>
+                        <td>Contract Approval</td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-low">I</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-high">A</span></td>
+                        <td><span class="badge badge-low">I</span></td>
+                    </tr>
+                    <tr>
+                        <td>Periodic Review</td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-medium">R</span></td>
+                        <td><span class="badge badge-high">A</span></td>
+                        <td><span class="badge badge-low">C</span></td>
+                        <td><span class="badge badge-low">I</span></td>
+                    </tr>
+                </table>
+
+                <div class="info-box">
+                    <strong>Legend:</strong> <span class="badge badge-high">A</span> = Accountable | <span class="badge badge-medium">R</span> = Responsible | <span class="badge badge-low">C</span> = Consulted | <span class="badge badge-low">I</span> = Informed
+                </div>
+
+                <h2>3.4 Decision Authority Matrix (RAM)</h2>
+                <p>Vendor risk decisions are based on the level of residual risk identified during assessment.</p>
+
+                <table>
+                    <tr>
+                        <th>Residual Risk Level</th>
+                        <th>Decision Authority</th>
+                        <th>Required Action</th>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-low">Low</span></td>
+                        <td>Business Owner</td>
+                        <td>Accept</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-medium">Medium</span></td>
+                        <td>Business Owner + Risk Owner</td>
+                        <td>Accept with controls</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-high">High</span></td>
+                        <td>Risk Committee</td>
+                        <td>Mitigate or Reject</td>
+                    </tr>
+                </table>
+
+                <p>This matrix ensures that higher-risk decisions receive appropriate executive oversight.</p>
+
+                <h2>3.5 Escalation Logic</h2>
+                <p>Vendor risks must be escalated under the following conditions:</p>
+                <ul>
+                    <li>Residual risk exceeds defined risk appetite</li>
+                    <li>Critical control gaps are identified with no feasible mitigation</li>
+                    <li>Vendor experiences a significant security incident</li>
+                    <li>Regulatory or contractual non-compliance is identified</li>
+                </ul>
+
+                <p>Escalated risks are reviewed by the Risk Committee, which determines whether to:</p>
+                <ul>
+                    <li>Approve risk acceptance</li>
+                    <li>Require additional mitigation</li>
+                    <li>Suspend or terminate the vendor relationship</li>
+                </ul>
+
+                <h2>3.6 Risk Ownership Principles</h2>
+                <div class="success-box">
+                    <p><strong>The following principles apply to all vendor risk decisions:</strong></p>
+                    <ul>
+                        <li>Risk ownership cannot be delegated to vendors</li>
+                        <li>Risk acceptance requires explicit approval</li>
+                        <li>Business urgency does not override governance</li>
+                        <li>All decisions must be documented and auditable</li>
+                    </ul>
+                    <p>These principles ensure consistent and defensible vendor risk management across the organization.</p>
+                </div>
+            </div>
+
+ <!-- Section 3: Vendor Risk Lifecycle -->
+            <div class="section" id="section-3">
+                <h1><span class="section-number">4</span>Vendor Risk Lifecycle</h1>
+
+                <h2>4.1 Lifecycle Objective</h2>
+                <p>The Vendor Risk Lifecycle defines a structured, end-to-end process for identifying, assessing, managing, and monitoring risks associated with third-party vendors. The objective is to ensure that vendor risk is evaluated consistently throughout the vendor relationship and not treated as a one-time activity.</p>
+                
+                <p>This lifecycle integrates risk assessment into business processes, enabling timely decision-making while maintaining governance and oversight.</p>
+
+                <h2>4.2 Overview of the Vendor Risk Lifecycle</h2>
+                <p>The vendor risk lifecycle consists of five key stages:</p>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>1️⃣ Vendor Onboarding</h4>
+                        <p>Initial vendor identification and scope determination</p>
+                    </div>
+                    <div class="card">
+                        <h4>2️⃣ Risk Identification and Assessment</h4>
+                        <p>Formal risk evaluation across defined domains</p>
+                    </div>
+                    <div class="card">
+                        <h4>3️⃣ Risk Treatment and Decision</h4>
+                        <p>Determination of risk mitigation and acceptance</p>
+                    </div>
+                    <div class="card">
+                        <h4>4️⃣ Contract Execution and Enablement</h4>
+                        <p>Contractual control implementation and vendor activation</p>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h4>5️⃣ Ongoing Monitoring and Review</h4>
+                    <p>Continuous risk monitoring and periodic reassessment</p>
+                </div>
+
+                <p style="margin-top: 25px;">Each stage includes defined entry and exit criteria to ensure accountability and control.</p>
+
+                <h2>4.3 Stage 1: Vendor Onboarding</h2>
+                <div class="info-box">
+                    <h4>Purpose:</h4>
+                    <p>To formally initiate vendor engagement and determine whether a vendor requires a risk assessment.</p>
+                </div>
+
+                <h3>Entry Criteria:</h3>
+                <ul>
+                    <li>New vendor proposed by a business unit</li>
+                    <li>Change in scope for an existing vendor</li>
+                    <li>Renewal of an existing vendor contract</li>
+                </ul>
+
+                <h3>Key Activities:</h3>
+                <ul>
+                    <li>Identification of vendor type and service provided</li>
+                    <li>Preliminary assessment of data access and system exposure</li>
+                    <li>Assignment of Business Owner and Risk Owner</li>
+                </ul>
+
+                <h3>Exit Criteria:</h3>
+                <ul>
+                    <li>Vendor classified as in-scope or out-of-scope</li>
+                    <li>Decision to proceed with formal risk assessment</li>
+                </ul>
+
+                <h2>4.4 Stage 2: Risk Identification and Assessment</h2>
+                <div class="info-box">
+                    <h4>Purpose:</h4>
+                    <p>To identify and assess risks introduced by the vendor across defined risk domains.</p>
+                </div>
+
+                <h3>Key Activities:</h3>
+                <ul>
+                    <li>Distribution of vendor risk questionnaire</li>
+                    <li>Review of vendor responses and supporting evidence</li>
+                    <li>Assessment across six fixed risk domains</li>
+                    <li>Calculation of inherent and residual risk</li>
+                </ul>
+
+                <h3>Outputs:</h3>
+                <ul>
+                    <li>Documented risk statements</li>
+                    <li>Preliminary risk ratings</li>
+                    <li>Identified control gaps</li>
+                </ul>
+
+                <h2>4.5 Stage 3: Risk Treatment and Decision</h2>
+                <div class="info-box">
+                    <h4>Purpose:</h4>
+                    <p>To determine how identified risks will be managed prior to vendor approval or continuation.</p>
+                </div>
+
+                <h3>Key Activities:</h3>
+                <ul>
+                    <li>Evaluation of mitigation options</li>
+                    <li>Agreement on remediation actions and timelines</li>
+                    <li>Determination of residual risk</li>
+                    <li>Formal risk decision (accept, mitigate, transfer, or reject)</li>
+                </ul>
+
+                <div class="warning-box">
+                    <strong>Decision Authority:</strong> Risk decisions follow the Decision Authority Matrix defined in Section 3.
+                </div>
+
+                <h3>Exit Criteria:</h3>
+                <ul>
+                    <li>Approved risk treatment plan</li>
+                    <li>Documented risk acceptance or rejection</li>
+                </ul>
+
+                <h2>4.6 Stage 4: Contract Execution and Enablement</h2>
+                <div class="info-box">
+                    <h4>Purpose:</h4>
+                    <p>To ensure that risk treatment decisions are reflected in contractual and operational controls.</p>
+                </div>
+
+                <h3>Key Activities:</h3>
+                <ul>
+                    <li>Inclusion of security and compliance requirements in contracts</li>
+                    <li>Definition of incident notification and audit rights</li>
+                    <li>Confirmation of service-level and continuity commitments</li>
+                </ul>
+
+                <h3>Exit Criteria:</h3>
+                <ul>
+                    <li>Contract execution with risk-aligned controls</li>
+                    <li>Vendor enabled for operational use</li>
+                </ul>
+
+                <h2>4.7 Stage 5: Ongoing Monitoring and Review</h2>
+                <div class="info-box">
+                    <h4>Purpose:</h4>
+                    <p>To ensure that vendor risk remains within acceptable levels throughout the relationship.</p>
+                </div>
+
+                <h3>Key Activities:</h3>
+                <ul>
+                    <li>Periodic reassessment based on vendor risk level</li>
+                    <li>Review of incidents, breaches, or service disruptions</li>
+                    <li>Monitoring of regulatory or business changes</li>
+                    <li>Update of risk register and evidence</li>
+                </ul>
+
+                <h3>Review Frequency:</h3>
+                <table>
+                    <tr>
+                        <th>Vendor Risk Level</th>
+                        <th>Review Frequency</th>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-high">High</span></td>
+                        <td>At least annually</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-medium">Medium</span></td>
+                        <td>Every 18–24 months</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-low">Low</span></td>
+                        <td>As required</td>
+                    </tr>
+                </table>
+
+                <h2>4.8 Lifecycle Governance and Exceptions</h2>
+                <div class="warning-box">
+                    <p>Any deviations from the defined lifecycle, including expedited onboarding or temporary risk acceptance, must be documented and approved by the appropriate authority. Lifecycle exceptions are reviewed periodically to ensure they do not become permanent control gaps.</p>
+                </div>
+            </div>
+
+            <!-- Section 4: Risk Methodology -->
+            <div class="section" id="section-4">
+                <h1><span class="section-number">5</span>Risk Methodology</h1>
+
+                <h2>5.1 Methodology Objective</h2>
+                <p>The objective of the vendor risk methodology is to provide a consistent, objective, and repeatable approach for identifying, assessing, and comparing risks introduced by third-party vendors.</p>
+                
+                <p>This methodology is designed to support business-aligned decision-making by translating technical and operational control information into measurable risk outcomes that can be understood by both technical and non-technical stakeholders.</p>
+
+                <h2>5.2 Risk Domain Model</h2>
+                <p>Vendor risk is assessed across six fixed risk domains. These domains represent the minimum risk coverage required to evaluate a vendor's ability to securely and reliably support organizational operations.</p>
+                
+                <div class="success-box">
+                    <strong>Domain Consistency:</strong> The use of fixed domains ensures consistency, comparability, and governance across all vendor assessments.
+                </div>
+
+                <h3>Defined Risk Domains</h3>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>🔒 Data Protection</h4>
+                        <p>Measures the vendor's ability to protect data confidentiality, integrity, and availability through encryption, data handling practices, and data lifecycle controls.</p>
+                    </div>
+                    <div class="card">
+                        <h4>🔑 Identity and Access Management</h4>
+                        <p>Evaluates how access to systems and data is authenticated, authorized, and reviewed, including privileged access controls.</p>
+                    </div>
+                    <div class="card">
+                        <h4>⚖️ Compliance and Privacy</h4>
+                        <p>Assesses alignment with regulatory, legal, and contractual requirements, including privacy obligations and audit readiness.</p>
+                    </div>
+                    <div class="card">
+                        <h4>♻️ Business Continuity</h4>
+                        <p>Examines resilience, availability, disaster recovery capabilities, and the vendor's ability to sustain operations during disruptions.</p>
+                    </div>
+                    <div class="card">
+                        <h4>🚨 Incident Response</h4>
+                        <p>Reviews the vendor's ability to detect, respond to, communicate, and recover from security incidents in a timely manner.</p>
+                    </div>
+                    <div class="card">
+                        <h4>🏛️ Vendor Governance</h4>
+                        <p>Evaluates internal security governance, policy enforcement, risk management practices, and executive oversight within the vendor organization.</p>
+                    </div>
+                </div>
+
+                <h2>5.3 Assessment Technique</h2>
+                <p>Vendor risk assessments are conducted using a structured questionnaire supported by evidence validation.</p>
+
+                <h3>Assessment Components</h3>
+                <ul>
+                    <li>Multiple-choice questions mapped to each risk domain</li>
+                    <li>Scoring scale from 1 to 5 based on control effectiveness</li>
+                    <li>Evidence requirements to support vendor responses</li>
+                </ul>
+
+                <p>The assessment focuses on control maturity and operational effectiveness rather than policy existence alone.</p>
+
+                <h2>5.4 Scoring Model</h2>
+                <h3>Control Scoring Scale</h3>
+                
+                <table>
+                    <tr>
+                        <th>Score</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td><strong>5</strong></td>
+                        <td>Control fully implemented and consistently effective</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4</strong></td>
+                        <td>Control implemented with minor gaps</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3</strong></td>
+                        <td>Control partially implemented</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2</strong></td>
+                        <td>Control largely ineffective</td>
+                    </tr>
+                    <tr>
+                        <td><strong>1</strong></td>
+                        <td>Control not implemented</td>
+                    </tr>
+                </table>
+
+                <h2>5.5 Inherent Risk Determination</h2>
+                <p>Inherent risk represents the level of risk posed by a vendor in the absence of controls.</p>
+                
+                <p>Inherent risk is determined using two factors:</p>
+                <ul>
+                    <li><strong>Likelihood</strong> – Probability of a risk event occurring</li>
+                    <li><strong>Impact</strong> – Potential business impact if the risk materializes</li>
+                </ul>
+
+                <div class="info-box">
+                    <h4>Formula:</h4>
+                    <p style="text-align: center; font-size: 1.2rem; margin: 15px 0;"><strong>Inherent Risk = Likelihood × Impact</strong></p>
+                    <p>Likelihood and impact are rated using standardized scales defined by the organization to ensure consistency across assessments.</p>
+                </div>
+
+                <h2>5.6 Control Effectiveness Evaluation</h2>
+                <p>Control effectiveness reflects how well vendor controls reduce inherent risk.</p>
+                
+                <p>Control effectiveness is determined by:</p>
+                <ul>
+                    <li>Assessment responses</li>
+                    <li>Quality and completeness of supporting evidence</li>
+                    <li>Observed control maturity</li>
+                </ul>
+
+                <p>Higher control effectiveness results in greater reduction of inherent risk.</p>
+
+                <h2>5.7 Residual Risk Calculation</h2>
+                <p>Residual risk represents the remaining level of risk after accounting for control effectiveness.</p>
+
+                <div class="success-box">
+                    <h4>Formula:</h4>
+                    <p style="text-align: center; font-size: 1.2rem; margin: 15px 0;"><strong>Residual Risk = Inherent Risk − Control Effectiveness</strong></p>
+                    <p>Residual risk is the primary input for risk treatment and decision-making.</p>
+                </div>
+
+                <h2>5.8 Risk Rating Normalization</h2>
+                <p>Residual risk scores are normalized into qualitative risk ratings to support management understanding:</p>
+
+                <table>
+                    <tr>
+                        <th>Rating</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-low">Low</span></td>
+                        <td>Risk is within acceptable tolerance</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-medium">Medium</span></td>
+                        <td>Risk requires management attention</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-high">High</span></td>
+                        <td>Risk exceeds acceptable tolerance</td>
+                    </tr>
+                </table>
+
+                <p>This normalization enables consistent reporting and escalation across vendors.</p>
+
+                <h2>5.9 Use of Professional Judgment</h2>
+                <div class="warning-box">
+                    <p>While the scoring model provides structure, professional judgment is applied where necessary. Factors such as vendor criticality, business dependency, and external threat intelligence may influence final risk ratings.</p>
+                    <p><strong>Any adjustments based on judgment must be documented to maintain transparency and auditability.</strong></p>
+                </div>
+
+                <h2>5.10 Methodology Governance</h2>
+                <p>The risk methodology is reviewed periodically to ensure alignment with evolving business needs, regulatory requirements, and threat landscapes. Changes to the methodology require approval from the Risk Committee.</p>
+            </div>
+
+            <!-- Section 5: Risk Classification & Treatment -->
+            <div class="section" id="section-5">
+                <h1><span class="section-number">6</span>Risk Classification & Treatment</h1>
+
+                <h2>6.1 Objective of Risk Classification</h2>
+                <p>The objective of risk classification is to translate assessed residual risk into clear, actionable decisions. Risk classification ensures that vendor risks are treated consistently and aligned with the organization's risk appetite.</p>
+                
+                <p>This section defines how risks are categorized, what actions are required for each category, and who has the authority to approve those actions.</p>
+
+                <h2>6.2 Risk Classification Levels</h2>
+                <p>Residual risks identified during vendor assessments are classified into the following levels:</p>
+
+                <table>
+                    <tr>
+                        <th>Risk Level</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-low">Low</span></td>
+                        <td>Risk is within acceptable tolerance and does not require additional action</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-medium">Medium</span></td>
+                        <td>Risk requires defined controls or monitoring to remain acceptable</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-high">High</span></td>
+                        <td>Risk exceeds acceptable tolerance and requires mitigation or rejection</td>
+                    </tr>
+                </table>
+
+                <p>These classifications provide a common language for communicating risk across technical and non-technical stakeholders.</p>
+
+                <h2>6.3 Risk Treatment Options</h2>
+                <p>For each identified risk, one of the following treatment options must be selected:</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>✅ Accept</h4>
+                        <p>Acknowledge and formally accept residual risk</p>
+                    </div>
+                    <div class="card">
+                        <h4>🛡️ Mitigate</h4>
+                        <p>Implement additional controls to reduce risk</p>
+                    </div>
+                    <div class="card">
+                        <h4>🔄 Transfer</h4>
+                        <p>Transfer risk through contractual, insurance, or third-party mechanisms</p>
+                    </div>
+                    <div class="card">
+                        <h4>🚫 Avoid</h4>
+                        <p>Discontinue or reject the vendor relationship</p>
+                    </div>
+                </div>
+
+                <p style="margin-top: 25px;">Risk treatment decisions are documented and tracked through the risk register.</p>
+
+                <h2>6.4 Decision Logic by Risk Level</h2>
+                <p>Risk treatment decisions are guided by the residual risk classification:</p>
+
+                <table>
+                    <tr>
+                        <th>Residual Risk</th>
+                        <th>Default Treatment</th>
+                        <th>Approval Requirement</th>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-low">Low</span></td>
+                        <td>Accept</td>
+                        <td>Business Owner</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-medium">Medium</span></td>
+                        <td>Accept with controls</td>
+                        <td>Business Owner + Risk Owner</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-high">High</span></td>
+                        <td>Mitigate or Avoid</td>
+                        <td>Risk Committee</td>
+                    </tr>
+                </table>
+
+                <div class="warning-box">
+                    <strong>Important:</strong> Exceptions to default treatment require formal justification and approval.
+                </div>
+
+                <h2>6.5 Risk Acceptance Principles</h2>
+                <p>Risk acceptance is a conscious business decision and must adhere to the following principles:</p>
+
+                <div class="success-box">
+                    <ul>
+                        <li>Risk acceptance must be explicit and documented</li>
+                        <li>Acceptance must be aligned with defined risk appetite</li>
+                        <li>Temporary risk acceptance must include review dates</li>
+                        <li>Accepted risks remain subject to ongoing monitoring</li>
+                    </ul>
+                    <p style="margin-top: 15px;"><strong>Risk acceptance does not eliminate accountability for future incidents.</strong></p>
+                </div>
+
+                <h2>6.6 Risk Mitigation Planning</h2>
+                <p>When mitigation is required, a documented mitigation plan must be developed that includes:</p>
+
+                <ul>
+                    <li>Description of required control improvements</li>
+                    <li>Responsible owner for each action</li>
+                    <li>Target completion dates</li>
+                    <li>Verification criteria</li>
+                </ul>
+
+                <p>Mitigation progress is tracked and reviewed until risk is reduced to an acceptable level.</p>
+
+                <h2>6.7 Risk Treatment Tracking</h2>
+                <div class="info-box">
+                    <p>All risk treatment decisions and actions are tracked within the centralized risk register. Changes in risk level or treatment status must be supported by updated evidence and reviewed by the appropriate stakeholders.</p>
+                </div>
+
+                <h2>6.8 Escalation and Reassessment</h2>
+                <p>Risks must be reassessed and escalated if:</p>
+
+                <ul>
+                    <li>Mitigation actions are delayed or ineffective</li>
+                    <li>Vendor circumstances change materially</li>
+                    <li>New threats or vulnerabilities emerge</li>
+                </ul>
+
+                <p>Reassessment ensures that risk decisions remain valid over time.</p>
+            </div>
+
+            <!-- Section 6: Risk Register & Evidence Management -->
+            <div class="section" id="section-6">
+                <h1><span class="section-number">7</span>Risk Register & Evidence Management</h1>
+
+                <h2>7.1 Purpose of the Risk Register</h2>
+                <p>The risk register serves as the centralized system of record for all third-party vendor risks identified through this framework. It provides a structured view of risk status, ownership, decisions, and supporting evidence, enabling transparency and accountability across the organization.</p>
+                
+                <p>The risk register supports governance, reporting, and audit requirements by ensuring that all vendor risk decisions are documented and traceable.</p>
+
+                <h2>7.2 Risk Register Structure</h2>
+                <p>Each vendor risk recorded in the risk register must include the following mandatory fields:</p>
+
+                <table>
+                    <tr>
+                        <th>Field</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Vendor Name</strong></td>
+                        <td>Legal name of the third-party vendor</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Service Description</strong></td>
+                        <td>Summary of the service provided</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Risk Domain</strong></td>
+                        <td>Associated risk domain</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Risk Statement</strong></td>
+                        <td>Clear description of the risk</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Inherent Risk</strong></td>
+                        <td>Risk level prior to controls</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Control Summary</strong></td>
+                        <td>Summary of key mitigating controls</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Residual Risk</strong></td>
+                        <td>Risk level after controls</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Risk Treatment</strong></td>
+                        <td>Accept, Mitigate, Transfer, or Avoid</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Risk Owner</strong></td>
+                        <td>Accountable owner of the risk</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Decision Authority</strong></td>
+                        <td>Approving authority</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Review Date</strong></td>
+                        <td>Next scheduled review</td>
+                    </tr>
+                </table>
+
+                <div class="success-box">
+                    <strong>Standardization:</strong> This standardized structure ensures consistency across all vendor risk entries.
+                </div>
+
+                <h2>7.3 Risk Statement Quality</h2>
+                <p>Risk statements must be written in clear business language and describe:</p>
+
+                <ul>
+                    <li>The risk event</li>
+                    <li>The potential impact</li>
+                    <li>The affected business area</li>
+                </ul>
+
+                <div class="info-box">
+                    <h4>Example Risk Statement:</h4>
+                    <p><em>"Unauthorized access to customer data hosted by the vendor may result in regulatory penalties and loss of customer trust."</em></p>
+                    <p style="margin-top: 15px;">Clear risk statements support effective decision-making and escalation.</p>
+                </div>
+
+                <h2>7.4 Evidence Expectations</h2>
+                <p>Vendor risk assessments must be supported by appropriate evidence to validate control effectiveness.</p>
+
+                <h3>Acceptable Evidence Examples</h3>
+                <ul>
+                    <li>ISO/IEC 27001 certification or statements of applicability</li>
+                    <li>SOC 1 / SOC 2 reports</li>
+                    <li>Security policies and procedures</li>
+                    <li>Penetration test summaries</li>
+                    <li>Business continuity and disaster recovery test results</li>
+                    <li>Incident response plans</li>
+                </ul>
+
+                <p>Evidence should be current, relevant, and proportional to the vendor's risk level.</p>
+
+                <h2>7.5 Evidence Review and Validation</h2>
+                <p>Evidence is reviewed by Information Security and, where applicable, Legal or Compliance teams. Evidence validation focuses on:</p>
+
+                <ul>
+                    <li>Relevance to identified risks</li>
+                    <li>Completeness and coverage</li>
+                    <li>Recency and validity</li>
+                    <li>Alignment with vendor responses</li>
+                </ul>
+
+                <div class="warning-box">
+                    <strong>Control Gaps:</strong> Gaps or inconsistencies in evidence may result in increased residual risk or additional mitigation requirements.
+                </div>
+
+                <h2>7.6 Review Cadence</h2>
+                <p>Risk register entries are reviewed based on vendor criticality and risk level:</p>
+
+                <table>
+                    <tr>
+                        <th>Vendor Risk Level</th>
+                        <th>Review Frequency</th>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-high">High</span></td>
+                        <td>At least annually</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-medium">Medium</span></td>
+                        <td>Every 18–24 months</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-low">Low</span></td>
+                        <td>As required or upon material change</td>
+                    </tr>
+                </table>
+
+                <p>Reviews ensure that risk assessments remain current and reflect changes in vendor operations or threat landscape.</p>
+
+                <h2>7.7 Change Management</h2>
+                <p>Material changes that may trigger a risk reassessment include:</p>
+
+                <ul>
+                    <li>Expansion of vendor service scope</li>
+                    <li>Changes in data types or access levels</li>
+                    <li>Security incidents or breaches</li>
+                    <li>Regulatory or contractual changes</li>
+                </ul>
+
+                <p>All changes are documented in the risk register with updated assessments and decisions.</p>
+
+                <h2>7.8 Audit and Reporting Support</h2>
+                <div class="success-box">
+                    <p>The risk register provides evidence of due diligence and governance during audits, regulatory reviews, and management reporting. All decisions, approvals, and supporting evidence must be retained in accordance with organizational record retention policies.</p>
+                </div>
+            </div>
+
+            <!-- Section 7: Security Maturity Model -->
+            <div class="section" id="section-7">
+                <h1><span class="section-number">8</span>Security Maturity Model</h1>
+
+                <h2>8.1 Objective of the Maturity Model</h2>
+                <p>The Security Maturity Model provides a structured way to evaluate the overall strength, consistency, and reliability of a vendor's security and risk management practices.</p>
+                
+                <div class="info-box">
+                    <p>While risk scoring measures current exposure, the maturity model assesses the vendor's ability to sustain effective controls over time. This distinction enables more informed trust decisions, particularly for long-term or high-dependency vendors.</p>
+                </div>
+
+                <h2>8.2 Maturity Levels Overview</h2>
+                <p>Vendor security maturity is assessed across five defined levels. Each level reflects the degree to which security practices are formalized, managed, and continuously improved.</p>
+
+                <table>
+                    <tr>
+                        <th>Level</th>
+                        <th>Maturity Description</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Level 1</strong></td>
+                        <td>Ad-hoc</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Level 2</strong></td>
+                        <td>Initial</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Level 3</strong></td>
+                        <td>Defined</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Level 4</strong></td>
+                        <td>Managed</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Level 5</strong></td>
+                        <td>Optimized</td>
+                    </tr>
+                </table>
+
+                <p>The maturity level assigned to a vendor represents an overall assessment based on evidence across risk domains.</p>
+
+                <h2>8.3 Maturity Level Definitions</h2>
+
+                <div class="card">
+                    <h3>Level 1 – Ad-hoc</h3>
+                    <p>Security controls are informal, undocumented, or inconsistently applied. Risk management activities are reactive and driven by incidents rather than planning.</p>
+                </div>
+
+                <div class="card">
+                    <h3>Level 2 – Initial</h3>
+                    <p>Basic security controls exist but are not consistently implemented or monitored. Responsibilities may be unclear, and evidence of control effectiveness is limited.</p>
+                </div>
+
+                <div class="card">
+                    <h3>Level 3 – Defined</h3>
+                    <p>Security policies and procedures are documented and implemented across the organization. Controls are generally followed, and responsibilities are clearly assigned.</p>
+                </div>
+
+                <div class="card">
+                    <h3>Level 4 – Managed</h3>
+                    <p>Security controls are actively monitored and measured. Risk management is integrated into operational processes, and continuous improvement practices are in place.</p>
+                </div>
+
+                <div class="card">
+                    <h3>Level 5 – Optimized</h3>
+                    <p>Security and risk management are embedded into organizational culture. Controls are continuously improved using metrics, automation, and lessons learned.</p>
+                </div>
+
+                <h2>8.4 Maturity Assessment Approach</h2>
+                <p>Maturity levels are determined based on:</p>
+
+                <ul>
+                    <li>Vendor questionnaire responses</li>
+                    <li>Quality and consistency of evidence</li>
+                    <li>Observed control effectiveness</li>
+                    <li>Governance and oversight practices</li>
+                </ul>
+
+                <div class="info-box">
+                    <p>The maturity assessment is qualitative but structured to ensure consistency across vendors.</p>
+                </div>
+
+                <h2>8.5 Use of Maturity in Risk Decisions</h2>
+                <p>Maturity levels influence vendor trust and risk treatment decisions as follows:</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>📊 Assessment Frequency</h4>
+                        <p>Vendors with higher maturity may require less frequent reassessment</p>
+                    </div>
+                    <div class="card">
+                        <h4>⚠️ Risk Elevation</h4>
+                        <p>Low maturity may increase residual risk even when controls exist</p>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h4>🎯 Strategic Planning</h4>
+                    <p>Maturity informs long-term vendor strategy and dependency decisions</p>
+                </div>
+
+                <div class="warning-box" style="margin-top: 25px;">
+                    <strong>Important:</strong> Maturity does not replace risk scoring but provides additional context for decision-making.
+                </div>
+
+                <h2>8.6 Maturity Improvement Expectations</h2>
+                <p>For vendors with low or medium maturity, improvement actions may be required as part of risk mitigation plans. Expectations are proportional to vendor criticality and business dependency.</p>
+                
+                <p>Progress against maturity improvement actions is reviewed during periodic assessments.</p>
+
+                <h2>8.7 Governance of the Maturity Model</h2>
+                <div class="success-box">
+                    <p>The maturity model is reviewed periodically to ensure alignment with industry practices, regulatory expectations, and organizational risk tolerance. Any changes to maturity definitions require approval from the Risk Committee.</p>
+                </div>
+            </div>
+
+            <!-- Section 8: Standards Alignment -->
+            <div class="section" id="section-8">
+                <h1><span class="section-number">9</span>Standards Alignment</h1>
+
+                <h2>9.1 Purpose of Standards Alignment</h2>
+                <p>The purpose of standards alignment is to demonstrate that the Vendor Risk Assessment Framework is grounded in recognized industry standards while remaining tailored to organizational business needs.</p>
+                
+                <p>Alignment with international standards supports regulatory compliance, audit readiness, and external assurance without requiring vendors or internal teams to adopt standards verbatim.</p>
+
+                <h2>9.2 Alignment Approach</h2>
+                <p>This framework aligns conceptually and operationally with the following standards:</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>🏆 ISO/IEC 27001</h4>
+                        <p>Information Security Management Systems</p>
+                    </div>
+                    <div class="card">
+                        <h4>🛡️ NIST Cybersecurity Framework (CSF)</h4>
+                        <p>Comprehensive cybersecurity risk management</p>
+                    </div>
+                </div>
+
+                <div class="info-box" style="margin-top: 25px;">
+                    <p>Alignment is achieved through control mapping and outcome equivalence rather than one-to-one replication of standard controls.</p>
+                </div>
+
+                <h2>9.3 ISO/IEC 27001 Alignment</h2>
+                <p>Vendor-related risks and controls assessed under this framework map to relevant ISO/IEC 27001 Annex A control domains, including but not limited to:</p>
+
+                <ul>
+                    <li>Information security policies</li>
+                    <li>Access control</li>
+                    <li>Cryptography and data protection</li>
+                    <li>Supplier relationships</li>
+                    <li>Incident management</li>
+                    <li>Business continuity and resilience</li>
+                </ul>
+
+                <h3>Framework Support for ISO 27001</h3>
+                <p>The framework supports ISO 27001 requirements by:</p>
+
+                <div class="success-box">
+                    <ul>
+                        <li>Ensuring supplier risks are identified and assessed</li>
+                        <li>Requiring appropriate contractual controls</li>
+                        <li>Supporting evidence-based risk treatment decisions</li>
+                        <li>Enabling audit traceability</li>
+                    </ul>
+                </div>
+
+                <p>This alignment allows organizations operating an ISMS to integrate vendor risk assessments into their broader information security governance model.</p>
+
+                <h2>9.4 NIST Cybersecurity Framework Alignment</h2>
+                <p>The framework aligns with the five core functions of the NIST Cybersecurity Framework:</p>
+
+                <table>
+                    <tr>
+                        <th>NIST CSF Function</th>
+                        <th>Framework Alignment</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Identify</strong></td>
+                        <td>Vendor inventory, risk identification, governance</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Protect</strong></td>
+                        <td>Assessment of preventive and protective controls</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Detect</strong></td>
+                        <td>Evaluation of monitoring and detection capabilities</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Respond</strong></td>
+                        <td>Review of incident response readiness and communication</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Recover</strong></td>
+                        <td>Business continuity and recovery planning</td>
+                    </tr>
+                </table>
+
+                <div class="info-box">
+                    <p>This alignment ensures vendor risk is addressed across the full cybersecurity lifecycle rather than isolated to preventive controls.</p>
+                </div>
+
+                <h2>9.5 Use of Standards in Risk Decisions</h2>
+                <p>Standards alignment informs risk assessment and decision-making by:</p>
+
+                <ul>
+                    <li>Providing a common reference point for control expectations</li>
+                    <li>Supporting consistent evaluation across vendors</li>
+                    <li>Enabling communication with regulators and auditors</li>
+                    <li>Reducing ambiguity in risk treatment decisions</li>
+                </ul>
+
+                <div class="warning-box">
+                    <strong>Important:</strong> Standards are used as guidance, not as rigid checklists, allowing flexibility based on vendor context and business impact.
+                </div>
+
+                <h2>9.6 Evidence and Certification Considerations</h2>
+                <p>Vendor certifications and attestations (such as ISO 27001 certification or SOC reports) are considered supporting evidence but do not automatically eliminate risk.</p>
+
+                <p>Certification status is evaluated in conjunction with:</p>
+
+                <ul>
+                    <li>Scope and applicability of the certification</li>
+                    <li>Identified control gaps</li>
+                    <li>Vendor maturity and operational practices</li>
+                </ul>
+
+                <div class="success-box">
+                    <p>This ensures that reliance on certifications remains risk-based rather than assumption-based.</p>
+                </div>
+
+                <h2>9.7 Governance of Standards Alignment</h2>
+                <p>Standards alignment is reviewed periodically to ensure continued relevance as standards evolve and regulatory expectations change. Updates to alignment logic require approval from the Risk Committee.</p>
+            </div>
+
+            <!-- Section 9: Management Reporting & Risk Acceptance -->
+            <div class="section" id="section-9">
+                <h1><span class="section-number">10</span>Management Reporting & Risk Acceptance</h1>
+
+                <h2>10.1 Objective of Management Reporting</h2>
+                <p>The objective of management reporting is to provide senior leadership with clear, concise, and actionable visibility into third-party vendor risk. Reporting focuses on material risks, business impact, and required decisions rather than technical detail.</p>
+                
+                <p>Effective reporting enables leadership to understand risk exposure, prioritize mitigation efforts, and make informed decisions aligned with organizational risk appetite.</p>
+
+                <h2>10.2 Executive Risk Views</h2>
+                <p>Management reporting presents vendor risk information through high-level views designed for executive consumption, including:</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>📊 Risk Posture</h4>
+                        <p>Overall vendor risk posture</p>
+                    </div>
+                    <div class="card">
+                        <h4>⚠️ High-Risk Vendors</h4>
+                        <p>High and medium risk vendors</p>
+                    </div>
+                    <div class="card">
+                        <h4>📈 Risk Trends</h4>
+                        <p>Key risk themes and trends</p>
+                    </div>
+                    <div class="card">
+                        <h4>✅ Mitigation Actions</h4>
+                        <p>Outstanding mitigation actions</p>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h4>📋 Risk Acceptance Decisions</h4>
+                    <p>Risk acceptance decisions requiring approval</p>
+                </div>
+
+                <p style="margin-top: 25px;">These views enable leadership to assess whether vendor risk exposure is increasing, stable, or improving over time.</p>
+
+                <h2>10.3 Risk Acceptance Framework</h2>
+                <p>Risk acceptance is a formal management decision acknowledging that residual risk remains after controls are applied. Risk may be accepted when:</p>
+
+                <div class="info-box">
+                    <ul>
+                        <li>Further mitigation is not feasible or cost-effective</li>
+                        <li>The risk aligns with defined risk appetite</li>
+                        <li>Business value outweighs residual risk</li>
+                    </ul>
+                    <p style="margin-top: 15px;"><strong>Risk acceptance decisions must be documented and approved in accordance with governance requirements.</strong></p>
+                </div>
+
+                <h2>10.4 Risk Acceptance Authority</h2>
+                <p>Authority to accept risk is determined by residual risk level:</p>
+
+                <table>
+                    <tr>
+                        <th>Residual Risk</th>
+                        <th>Approval Authority</th>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-low">Low</span></td>
+                        <td>Business Owner</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-medium">Medium</span></td>
+                        <td>Business Owner + Risk Owner</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-high">High</span></td>
+                        <td>Risk Committee</td>
+                    </tr>
+                </table>
+
+                <div class="warning-box">
+                    <strong>Governance Requirement:</strong> Risk acceptance above defined thresholds requires formal review and documented justification.
+                </div>
+
+                <h2>10.5 Risk Acceptance Documentation</h2>
+                <p>Accepted risks are documented using a formal Risk Acceptance Memo that includes:</p>
+
+                <ul>
+                    <li>Description of the risk</li>
+                    <li>Business justification for acceptance</li>
+                    <li>Residual risk rating</li>
+                    <li>Duration of acceptance and review date</li>
+                    <li>Approving authority</li>
+                </ul>
+
+                <div class="success-box">
+                    <p>This documentation ensures transparency, accountability, and auditability.</p>
+                </div>
+
+                <h2>10.6 Reporting Frequency and Escalation</h2>
+                <p>Management reporting frequency is based on risk level and business criticality:</p>
+
+                <table>
+                    <tr>
+                        <th>Vendor Category</th>
+                        <th>Reporting Frequency</th>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-high">High-risk vendors</span></td>
+                        <td>Quarterly reporting</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-medium">Medium-risk vendors</span></td>
+                        <td>Biannual reporting</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-low">Low-risk vendors</span></td>
+                        <td>As required</td>
+                    </tr>
+                </table>
+
+                <div class="warning-box">
+                    <strong>Escalation:</strong> Material changes in vendor risk must be escalated promptly outside of regular reporting cycles.
+                </div>
+
+                <h2>10.7 Use of Reporting in Decision-Making</h2>
+                <p>Management reports are used to support decisions related to:</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>🔄 Vendor Lifecycle</h4>
+                        <p>Vendor onboarding and renewal</p>
+                    </div>
+                    <div class="card">
+                        <h4>💰 Investment</h4>
+                        <p>Investment in risk mitigation</p>
+                    </div>
+                    <div class="card">
+                        <h4>🚫 Termination</h4>
+                        <p>Termination or replacement of vendors</p>
+                    </div>
+                    <div class="card">
+                        <h4>🎯 Risk Appetite</h4>
+                        <p>Adjustment of risk appetite</p>
+                    </div>
+                </div>
+
+                <div class="success-box" style="margin-top: 25px;">
+                    <p>Reporting ensures that vendor risk is actively managed rather than passively documented.</p>
+                </div>
+            </div>
+<div class="section" id="section-10">
+                <h1><span class="section-number">11</span>Conclusion</h1>
+                
+                <div class="success-box">
+                    <h2>Framework Summary</h2>
+                    <p>This Enterprise Third-Party Vendor Risk Assessment Framework establishes a structured, business-aligned approach for managing risks introduced by third-party vendors. By integrating governance, risk assessment, and executive oversight, the framework enables informed and defensible decision-making across the vendor lifecycle.</p>
+                </div>
+
+                <h2>Key Framework Outcomes</h2>
+                <p>The framework shifts vendor risk management from ad-hoc assessments to a consistent operating model that prioritizes material risk, accountability, and transparency. It supports secure business growth by enabling the organization to engage vendors with a clear understanding of associated risks and control expectations.</p>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h4>🎯 Governance Integration</h4>
+                        <p>Clear ownership, decision authority, and escalation paths ensure vendor risks are managed at the appropriate organizational level.</p>
+                    </div>
+                    <div class="card">
+                        <h4>📊 Risk-Based Approach</h4>
+                        <p>Standardized methodology enables consistent evaluation and comparison of vendor risks across the organization.</p>
+                    </div>
+                    <div class="card">
+                        <h4>✓ Standards Alignment</h4>
+                        <p>Alignment with ISO 27001 and NIST CSF ensures the framework meets industry best practices and regulatory expectations.</p>
+                    </div>
+                    <div class="card">
+                        <h4>👁️ Executive Visibility</h4>
+                        <p>Management reporting provides leadership with actionable insights to support informed decision-making.</p>
+                    </div>
+                </div>
+
+                <h2>Framework Sustainability</h2>
+                <p>This framework is designed to be scalable and adaptable, allowing it to evolve with changing business needs, regulatory requirements, and threat landscapes. Ongoing review and continuous improvement will ensure that vendor risk management remains effective and aligned with organizational objectives.</p>
+
+                <div class="info-box">
+                    <h3>Continuous Improvement</h3>
+                    <p>The framework will be reviewed periodically to ensure:</p>
+                    <ul>
+                        <li>Alignment with evolving regulatory requirements</li>
+                        <li>Incorporation of emerging threat intelligence</li>
+                        <li>Adaptation to changing business models and vendor relationships</li>
+                        <li>Enhancement based on lessons learned and operational feedback</li>
+                    </ul>
+                </div>
+
+                <h2>Final Statement</h2>
+                <p>Through alignment with recognized industry standards, defined ownership and decision authority, and a focus on residual risk and acceptance, the framework strengthens the organization's ability to meet regulatory, audit, and stakeholder expectations while enabling secure and compliant business growth.</p>
+
+                <div class="success-box" style="margin-top: 30px; text-align: center;">
+                    <h3>🚀 Framework Implementation Readiness</h3>
+                    <p><strong>This framework is ready for enterprise deployment.</strong></p>
+                    <p>Organizations implementing this framework should establish appropriate tooling, training, and stakeholder communication to ensure successful adoption and sustained effectiveness.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <footer>
+            <p class="footer-gradient">Enterprise Third-Party Vendor Risk Assessment Framework</p>
+            <p style="color: #64748b; font-size: 0.9rem;">© 2026 | Governance, Risk & Compliance Framework | Industry-Grade GRC Solution</p>
+            <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 10px;">Designed for Enterprise Security & Risk Management Excellence</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentSection = 0;
+
+        function showSection(index) {
+            const sections = document.querySelectorAll('.section');
+            const buttons = document.querySelectorAll('.nav-pills button');
+            
+            sections.forEach(section => section.classList.remove('active'));
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            sections[index].classList.add('active');
+            buttons[index].classList.add('active');
+            
+            currentSection = index;
+            updateProgress();
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateProgress() {
+            const progress = ((currentSection + 1) / 11) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // Initialize progress bar
+        updateProgress();
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' && currentSection < 10) {
+                showSection(currentSection + 1);
+            } else if (e.key === 'ArrowLeft' && currentSection > 0) {
+                showSection(currentSection - 1);
+            }
+        });
+    </script>
+</body>
+</html>
